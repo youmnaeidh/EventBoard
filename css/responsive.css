@@ -1,0 +1,384 @@
+@media (max-width: 1050px) {
+  .events-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .story-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .footer-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 950px) {
+  .main-nav {
+    position: fixed;
+    top: 84px;
+    right: 20px;
+    left: 20px;
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    padding: 18px;
+    border-radius: 20px;
+    color: var(--ink);
+    background: var(--white);
+    box-shadow: var(--shadow);
+  }
+
+  .main-nav.open {
+    display: flex;
+  }
+
+  .main-nav a {
+    width: 100%;
+    padding: 12px;
+    color: var(--ink);
+  }
+
+  .main-nav a:hover,
+  .main-nav a.active {
+    color: var(--purple);
+    background: var(--soft);
+  }
+
+  .menu-button {
+    display: block;
+    margin-right: auto;
+  }
+
+  .header-cta {
+    display: none;
+  }
+
+  .header-inner {
+    gap: 12px;
+  }
+
+  .search-panel {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .search-panel .button {
+    grid-column: 1 / -1;
+  }
+
+  .interests {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .timeline {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 35px;
+  }
+
+  .timeline::before {
+    display: none;
+  }
+
+  .newsletter {
+    grid-template-columns: 1fr;
+  }
+
+  .details {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .container {
+    width: min(calc(100% - 26px), var(--container));
+  }
+
+  .section {
+    padding: 72px 0;
+  }
+
+  .site-header {
+    padding: 7px 0;
+    background: rgba(31, 17, 39, .48);
+  }
+
+  .brand img {
+    width: 105px;
+    height: 58px;
+  }
+
+  .hero {
+    min-height: 760px;
+  }
+
+  .hero-content {
+    padding-top: 80px;
+    text-align: center;
+  }
+
+  .hero h1 {
+    font-size: clamp(3rem, 14vw, 4.4rem);
+  }
+
+  .hero p {
+    margin-inline: auto;
+    font-size: 1rem;
+  }
+
+  .hero-actions {
+    justify-content: center;
+  }
+
+  .search-wrap {
+    padding-top: 22px;
+  }
+
+  .search-panel {
+    grid-template-columns: 1fr;
+    padding: 17px;
+  }
+
+  .search-panel .button {
+    grid-column: auto;
+  }
+
+  .story-points,
+  .events-grid,
+  .interests {
+    grid-template-columns: 1fr;
+  }
+
+  .event-image {
+    height: 240px;
+  }
+
+  .timeline {
+    grid-template-columns: 1fr;
+    text-align: right;
+  }
+
+  .timeline-item {
+    position: relative;
+    margin-right: 8px;
+    padding: 0 25px 0 10px;
+    border-right: 2px solid rgba(255, 255, 255, .28);
+    text-align: right;
+  }
+
+  .timeline-dot {
+    position: absolute;
+    top: 3px;
+    right: -10px;
+    margin: 0;
+  }
+
+  .testimonial {
+    padding: 55px 22px 32px;
+  }
+
+  .testimonial-text {
+    font-size: 1.1rem;
+  }
+
+  .shape {
+    display: none;
+  }
+
+  .newsletter {
+    padding: 35px 22px;
+  }
+
+  .newsletter form {
+    flex-direction: column;
+  }
+
+  .page-hero {
+    min-height: 370px;
+  }
+
+  .results-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .details-image {
+    height: 350px;
+  }
+
+  .detail-list div {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .detail-list span {
+    text-align: right;
+  }
+
+  .highlights {
+    grid-template-columns: 1fr;
+  }
+
+  .sell-form {
+    grid-template-columns: 1fr;
+    padding: 20px;
+  }
+
+  .full {
+    grid-column: auto;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .footer-bottom {
+    flex-direction: column;
+  }
+
+  .toast {
+    right: 13px;
+    left: 13px;
+    bottom: 13px;
+    text-align: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+
+  .hero-video {
+    display: none;
+  }
+
+  .hero {
+    background: url("../assets/branding/hero-poster.jpg") center / cover;
+  }
+}
+
+@media (max-width: 1050px) {
+  .schedule-grid,
+  .insight-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .organizer-preview-grid,
+  .sell-layout,
+  .analytics-grid,
+  .origin-story {
+    grid-template-columns: 1fr;
+  }
+
+  .sell-intro {
+    position: static;
+  }
+
+  .event-filter-panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .event-filter-panel .button {
+    grid-column: 1 / -1;
+  }
+
+  .metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .origin-card,
+  .analytics-card,
+  .insights-panel {
+    padding: 23px;
+  }
+
+  .schedule-column {
+    padding: 19px;
+  }
+
+  .organizer-preview-grid {
+    gap: 34px;
+  }
+
+  .mini-dashboard,
+  .metrics-grid,
+  .event-filter-panel,
+  .promotion-options {
+    grid-template-columns: 1fr;
+  }
+
+  .mini-dashboard > div:not(.mini-chart) {
+    padding: 14px;
+  }
+
+  .event-filter-panel .button {
+    grid-column: auto;
+  }
+
+  .analytics-card-head,
+  .analytics-cta {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .bar-row > div:first-child {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .ranking-list a {
+    grid-template-columns: 34px 1fr;
+  }
+
+  .ranking-list i {
+    grid-column: 2;
+  }
+
+  .sell-form {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 950px) {
+  .recommendation-heading,
+  .analytics-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .daily-chart {
+    height: 230px;
+  }
+}
+
+@media (max-width: 700px) {
+  .recommendation-chip {
+    align-self: flex-start;
+  }
+
+  .analytics-toolbar .button {
+    width: 100%;
+  }
+
+  .daily-chart {
+    height: 210px;
+    gap: 5px;
+  }
+
+  .daily-column span {
+    display: none;
+  }
+
+  .daily-column {
+    grid-template-rows: 1fr 24px;
+  }
+}

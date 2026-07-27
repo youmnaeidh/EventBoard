@@ -1,0 +1,20 @@
+:root {
+  --pink: #f45b8c;
+  --rose: #ff799e;
+  --purple: #8f4fec;
+  --violet: #6f3dc4;
+  --orange: #ffad63;
+  --ink: #24172c;
+  --muted: #766c7d;
+  --line: #eadfea;
+  --soft: #fff7fb;
+  --white: #ffffff;
+  --grad: linear-gradient(135deg, var(--pink), var(--purple) 55%, var(--orange));
+  --grad-soft: linear-gradient(135deg, rgba(244, 91, 140, .1), rgba(143, 79, 236, .09), rgba(255, 173, 99, .12));
+  --shadow: 0 24px 70px rgba(67, 35, 80, .15);
+  --small-shadow: 0 13px 35px rgba(67, 35, 80, .1);
+  --radius-sm: 14px;
+  --radius-md: 22px;
+  --radius-lg: 34px;
+  --container: 1180px;
+}

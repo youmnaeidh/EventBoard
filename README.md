@@ -14,6 +14,19 @@ EventBoard is a responsive event-discovery website for local activities in Madin
 - **Tools:** HTML5, CSS3, JavaScript, browser storage, and CSV data.
 - **Data scope:** Synthetic interaction data and locally recorded browser actions; no personal data is collected.
 
+## Repository history
+
+The original 2023 graduation project was developed outside this public repository. This repository begins with a consolidated portfolio edition published in 2026, so its commit history represents the public portfolio update—not the full duration of the university project.
+
+| Period | Milestone |
+|---|---|
+| 2023 | Graduation-project concept, requirements, visual direction, and Arabic user experience |
+| July 2026 | Consolidated portfolio edition with reorganized front end, analytics, reporting, and documentation |
+| August 2026 | Recruiter-focused README and clearer project positioning |
+| September 2026 | Cinematic homepage hero redesign and responsive refinements |
+
+Future improvements are recorded as focused commits so each design, documentation, or functionality change remains easy to review.
+
 ![EventBoard project](assets/eventboard-social-preview.png)
 
 ## Project background

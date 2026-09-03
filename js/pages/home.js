@@ -41,28 +41,25 @@ window.EventBoard = window.EventBoard || {};
         <div class="hero-overlay"></div>
 
         <div class="container hero-content">
-          <span class="hero-badge">كل فعالية في وقتها ✨</span>
-          <h1>لا تفوّت <span>فعالية تحبها</span><br />في المدينة</h1>
-          <p>ورش، معارض، تجارب عائلية وأكثر.</p>
-        </div>
-      </section>
+          <div class="hero-copy">
+            <h1>المدينة فيها<br /><span>أكثر مما تتخيّل</span></h1>
+            <p>اكتشف فعاليات وتجارب تناسب اهتماماتك.</p>
 
-      <section class="search-wrap" aria-label="البحث عن الفعاليات">
-        <div class="container">
-          <form class="search-panel reveal" id="homeSearch">
-            <label>
-              ابحث عن فعالية
-              <span class="input-box">
-                <span aria-hidden="true">⌕</span>
-                <input id="searchQuery" name="query" type="search" placeholder="مثلاً: معرض، ورشة، قهوة..." />
-              </span>
-            </label>
+            <div class="hero-actions">
+              <a class="button hero-primary" href="#events">استكشف الفعاليات</a>
+            </div>
 
-            <label>
-              التصنيف
-              <span class="input-box">
+            <form class="hero-search" id="homeSearch" aria-label="البحث عن الفعاليات">
+              <label class="hero-search-query">
+                <span class="sr-only">ابحث عن فعالية أو تجربة</span>
+                <span class="hero-search-icon" aria-hidden="true">⌕</span>
+                <input id="searchQuery" name="query" type="search" placeholder="ابحث عن فعالية أو تجربة" />
+              </label>
+
+              <label class="hero-search-category">
+                <span class="sr-only">التصنيف</span>
                 <select id="searchCategory" name="category">
-                  <option value="الكل">الكل</option>
+                  <option value="الكل">كل التصنيفات</option>
                   <option value="ثقافة">ثقافة</option>
                   <option value="فن">فن</option>
                   <option value="تراث">تراث</option>
@@ -71,11 +68,11 @@ window.EventBoard = window.EventBoard || {};
                   <option value="ورش">ورش</option>
                   <option value="طعام وقهوة">طعام وقهوة</option>
                 </select>
-              </span>
-            </label>
+              </label>
 
-            <button class="button button-gradient" type="submit">بحث</button>
-          </form>
+              <button class="button hero-search-button" type="submit">بحث</button>
+            </form>
+          </div>
         </div>
       </section>
 

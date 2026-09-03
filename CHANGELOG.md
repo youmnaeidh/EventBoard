@@ -1,5 +1,14 @@
 # Changelog
 
+## Hero redesign
+
+- Preserved the original EventBoard logo and Madinah video
+- Reworked the hero with a warmer cinematic overlay and stronger Arabic display typography
+- Added the new headline: "المدينة فيها أكثر مما تتخيّل"
+- Moved event discovery into a compact glass search bar inside the hero
+- Added a clear explore-events call to action
+- Adapted the new hero layout for tablet, mobile, and reduced-motion preferences
+
 ## Portfolio data version
 
 - Replaced current-date wording with historical event-period labels for the 2023 project data

@@ -22,9 +22,20 @@ window.EventBoard = window.EventBoard || {};
     });
   }
 
-  function closeMobileMenu() {
+  function closeMobileMenu({ restoreFocus = false } = {}) {
+    const wasOpen = mainNav.classList.contains("open");
     mainNav.classList.remove("open");
     menuButton.setAttribute("aria-expanded", "false");
+    menuButton.setAttribute("aria-label", "فتح القائمة");
+    if (restoreFocus && wasOpen) menuButton.focus();
+  }
+
+  function openMobileMenu() {
+    mainNav.classList.add("open");
+    menuButton.setAttribute("aria-expanded", "true");
+    menuButton.setAttribute("aria-label", "إغلاق القائمة");
+    const firstLink = mainNav.querySelector("a");
+    if (firstLink) firstLink.focus();
   }
 
   function setupRevealAnimation() {
@@ -220,6 +231,8 @@ window.EventBoard = window.EventBoard || {};
       const eventId = Number(actionButton.dataset.eventId);
       const added = EB.storage.togglePlan(eventId);
       actionButton.textContent = added ? "إزالة من خطتي" : "أضف إلى خطتي";
+      actionButton.setAttribute("aria-pressed", String(added));
+      actionButton.setAttribute("aria-label", added ? "إزالة الفعالية من خطتي" : "إضافة الفعالية إلى خطتي");
       EB.ui.showToast(added ? "تمت إضافة الفعالية إلى خطتك" : "تم حذف الفعالية من خطتك");
     }
 
@@ -250,8 +263,17 @@ window.EventBoard = window.EventBoard || {};
   });
 
   menuButton.addEventListener("click", () => {
-    const isOpen = mainNav.classList.toggle("open");
-    menuButton.setAttribute("aria-expanded", String(isOpen));
+    if (mainNav.classList.contains("open")) {
+      closeMobileMenu({ restoreFocus: true });
+    } else {
+      openMobileMenu();
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && mainNav.classList.contains("open")) {
+      closeMobileMenu({ restoreFocus: true });
+    }
   });
 
   document.addEventListener("click", (event) => {

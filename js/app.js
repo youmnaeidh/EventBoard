@@ -262,6 +262,16 @@ window.EventBoard = window.EventBoard || {};
     }
   });
 
+  // The skip link targets <main id="app">; prevent the hash router from treating #app as a page.
+  const skipLink = document.querySelector(".skip-link");
+  if (skipLink) {
+    skipLink.addEventListener("click", (event) => {
+      event.preventDefault();
+      app.focus({ preventScroll: true });
+      app.scrollIntoView({ block: "start", behavior: "auto" });
+    });
+  }
+
   menuButton.addEventListener("click", () => {
     if (mainNav.classList.contains("open")) {
       closeMobileMenu({ restoreFocus: true });

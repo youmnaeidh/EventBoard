@@ -58,6 +58,8 @@ window.EventBoard = window.EventBoard || {};
                 type="button"
                 data-action="toggle-plan"
                 data-event-id="${event.id}"
+                aria-pressed="${String(inPlan)}"
+                aria-label="${inPlan ? "إزالة الفعالية من خطتي" : "إضافة الفعالية إلى خطتي"}"
               >${inPlan ? "إزالة من خطتي" : "أضف إلى خطتي"}</button>
 
               <button

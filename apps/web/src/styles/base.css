@@ -1,0 +1,26 @@
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: calc(var(--header-h) + 12px); }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font-family: var(--font-ui); font-size: 16px; line-height: 1.75;
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+}
+img, video { display: block; max-width: 100%; }
+svg { display: inline-block; vertical-align: middle; flex: none; }
+h1, h2, h3, h4 { margin: 0; line-height: 1.25; font-weight: 700; letter-spacing: 0; }
+h1, h2 { font-family: var(--font-display); font-weight: 800; line-height: 1.12; }
+p { margin: 0; }
+a { color: var(--orchid); text-decoration: none; }
+a:hover { color: var(--orchid-ink); }
+button { font: inherit; color: inherit; cursor: pointer; }
+input, select, textarea { font: inherit; color: inherit; }
+ul, ol { margin: 0; padding: 0; list-style: none; }
+:focus-visible { outline: 3px solid var(--orchid); outline-offset: 3px; border-radius: 2px; }
+.on-ink :focus-visible, .hero :focus-visible, .site-footer :focus-visible { outline-color: var(--saffron); }
+.site-header.on-hero:not(.is-solid) :focus-visible { outline-color: #fff; }
+::selection { background: var(--pink); color: var(--ink); }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.container { width: min(100% - 40px, var(--container)); margin-inline: auto; }
+.num { font-variant-numeric: tabular-nums; direction: ltr; unicode-bidi: isolate; }
+.skip-link { position: absolute; top: -60px; inset-inline-start: 12px; background: var(--ink); color: #fff; padding: 8px 14px; z-index: 200; }
+.skip-link:focus { top: 10px; color: #fff; }

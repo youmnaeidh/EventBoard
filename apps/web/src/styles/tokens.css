@@ -1,0 +1,64 @@
+/*
+  EventBoard visual system — "the city as a festival programme".
+  Flat colour fields from the original logo palette, one heavy Kufic display face for
+  headlines and numerals, one humanist UI face for reading. Corners stay square except
+  on small tags; structure comes from ink outlines, perforations and colour floods.
+*/
+:root {
+  /* Logo palette (unchanged hues) */
+  --pink: #fd84b4;
+  --violet: #8963eb;
+  --saffron: #feb96c;
+  --sky: #72abfe;
+  --lavender: #ab88fc;
+
+  /* Working colours */
+  --ink: #25122f;
+  --ink-2: #4a3a57;
+  --muted: #6b5f77;
+  --paper: #f5eefc;
+  --card: #ffffff;
+  --sunk: #ece3f6;
+  --line: #ddd0eb;
+  --line-strong: #25122f;
+
+  --orchid: #5a2fd1;          /* actions: 8.6:1 with white */
+  --orchid-ink: #4a22b4;
+  --orchid-soft: #e9e0fb;
+  --rose: #e5367d;
+  --rose-soft: #fde1ec;
+  --sun: #ffa63d;
+  --saffron-ink: #7a4500;
+  --saffron-soft: #fff0d9;
+  --palm: #17714f;
+  --palm-soft: #dcf3e8;
+  --danger: #b62a46;
+  --danger-soft: #fde4e8;
+  --blue: #72abfe;
+  --orange: #feb96c;
+  --purple: #8963eb;
+
+  --font-ui: "IBM Plex Sans Arabic", system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
+  --font-display: "Kufam Variable", "IBM Plex Sans Arabic", system-ui, sans-serif;
+
+  --r: 3px;
+  --r-pill: 999px;
+  --outline: 1.5px solid var(--ink);
+  --shadow-pop: 0 18px 50px rgba(37, 18, 47, 0.28);
+  --shadow-1: 0 1px 0 rgba(37, 18, 47, 0.08);
+  --shadow-2: 0 10px 30px rgba(37, 18, 47, 0.16);
+
+  --container: 1240px;
+  --header-h: 72px;
+  --ease: cubic-bezier(0.22, 0.8, 0.2, 1);
+
+  /* Type scale (display sizes carry extra line-height for Arabic dots and marks) */
+  --t-giant: clamp(60px, 11.5vw, 176px);
+  --t-xl: clamp(40px, 6.4vw, 92px);
+  --t-lg: clamp(30px, 4vw, 54px);
+  --t-md: clamp(22px, 2.4vw, 30px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}

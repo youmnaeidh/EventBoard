@@ -1,0 +1,45 @@
+# EventBoard: GitHub Pages frontend + Render Free API/AI + Neon Free PostgreSQL.
+# BEFORE launch: create Neon Free and use its DIRECT (non-pooled) URL for DATABASE_URL.
+# Set the API URL (public address, not a secret) in the GitHub Actions variable
+# EVENTBOARD_API_URL once Render has assigned it.
+
+envVarGroups:
+  - name: eventboard-shared-ai-auth
+    envVars:
+      - key: AI_SERVICE_TOKEN
+        generateValue: true
+
+services:
+  - type: web
+    name: eventboard-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile.api
+    healthCheckPath: /api/health
+    envVars:
+      - fromGroup: eventboard-shared-ai-auth
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_SSL
+        value: "true"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: AUTO_SEED
+        value: "true"
+      - key: NODE_ENV
+        value: production
+      - key: PUBLIC_WEB_ORIGIN
+        value: https://youmnaeidh.github.io
+      - key: AI_SERVICE_URL
+        value: ""
+
+  - type: web
+    name: eventboard-ai
+    runtime: docker
+    plan: free
+    dockerContext: ./services/ai
+    dockerfilePath: ./services/ai/Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - fromGroup: eventboard-shared-ai-auth
+      # ANTHROPIC_API_KEY is optional and may incur external API charges.

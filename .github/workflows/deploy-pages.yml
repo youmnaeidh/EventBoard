@@ -1,0 +1,44 @@
+name: Publish EventBoard v2 to GitHub Pages
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Check API URL is ready (do not deploy a broken demo)
+        env:
+          BACKEND_URL: ${{ vars.EVENTBOARD_API_URL }}
+        run: |
+          test -n "$BACKEND_URL" || { echo "Set GitHub Actions variable EVENTBOARD_API_URL first"; exit 1; }
+          case "$BACKEND_URL" in https://*.onrender.com) ;; *) echo "Expected live Render https origin"; exit 1 ;; esac
+          curl --fail --retry 3 --retry-delay 10 "$BACKEND_URL/api/health"
+      - run: npm ci
+      - name: Build Pages app
+        env:
+          VITE_API_BASE_URL: ${{ vars.EVENTBOARD_API_URL }}
+        run: npm run build:pages -w apps/web
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/web/dist
+      - id: deploy
+        uses: actions/deploy-pages@v4

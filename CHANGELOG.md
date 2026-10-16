@@ -1,25 +1,18 @@
 # Changelog
 
-## Hero redesign
+## 2.1.0 — visual redesign (front-end only)
+- New editorial festival identity: Kufam display type, flat logo-palette fields, poster-style event cards, programme-style lineup rows, original generated posters for imageless events. See `docs/design.md`.
+- Home: the Madinah hero video is now full-bleed with a floating header; new "وش مزاجك؟" picker backed by the real smart-search endpoint.
+- Event detail rebuilt as a poster header with a perforated, animated ticket; organizer area re-skinned with the same identity (charts and data logic unchanged).
+- Fixes found during review: Map/Events nav both highlighted, low-contrast inline links, cancelled bookings dimmed below AA contrast, QR codes without a text alternative.
+- Two new e2e journeys (hero video present, vibe picker returns real events). No backend, schema, API or AI-service changes.
 
-- Preserved the original EventBoard logo and Madinah video
-- Reworked the hero with a warmer cinematic overlay and stronger Arabic display typography
-- Added the new headline: "المدينة فيها أكثر مما تتخيّل"
-- Moved event discovery into a compact glass search bar inside the hero
-- Added a clear explore-events call to action
-- Adapted the new hero layout for tablet, mobile, and reduced-motion preferences
+## 2.0.0
+- Rebuilt as React + TypeScript SPA, Express API, PostgreSQL and a Python AI service.
+- Arabic natural-language search with interpreted chips; hybrid explainable recommendations; grounded assistant.
+- Organizer area: attendance forecast with prediction interval, slot advice, demand gaps, per-event analytics.
+- Accounts, bookings with seat locking, QR tickets, verified reviews, favourites, map view.
+- CI, Docker, Playwright journeys.
 
-## Portfolio data version
-
-- Replaced current-date wording with historical event-period labels for the 2023 project data
-- Renamed target coverage to interest compared with target
-- Added a synthetic interaction CSV dataset
-- Added an English data dictionary
-- Documented KPI formulas and limitations in the README
-- Expanded the graduation-project story and the data and digital transformation update
-- Added browser-based interaction tracking
-- Added rule-based personalized event recommendations
-- Added organizer performance and demand reporting
-- Added CSV report export
-- Kept analytics inside the organizer journey
-- Preserved the 2023 event dates and original visual identity
+## 1.x (portfolio edition of the 2023 graduation project)
+- Static front-end, browser storage, CSV synthetic interactions, KPI report and CSV export.

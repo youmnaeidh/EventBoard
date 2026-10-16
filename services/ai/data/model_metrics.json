@@ -1,0 +1,8 @@
+{
+  "validation": "5-fold cross-validation",
+  "mae": 10.23,
+  "baselineMaeCategoryMean": 18.29,
+  "r2": 0.699,
+  "wape": 0.32,
+  "intervalCoverage80": 0.805
+}

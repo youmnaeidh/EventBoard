@@ -1,6 +1,7 @@
 name: CI
 on:
-  push: { branches: [main, master] }
+  push: { branches: [main, release/eventboard-v2-pages] }
+  workflow_dispatch:
   pull_request:
 
 jobs:
@@ -74,4 +75,9 @@ jobs:
       - run: npm run test:e2e
       - if: failure()
         uses: actions/upload-artifact@v4
-        with: { name: e2e-debug, path: "test-results\napi.log\nservices/ai/ai.log" }
+        with:
+          name: e2e-debug
+          path: |
+            test-results
+            api.log
+            services/ai/ai.log

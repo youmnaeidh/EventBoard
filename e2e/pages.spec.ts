@@ -106,6 +106,15 @@ test("@mobile Pages layout fits narrow screens and preserves navigation", async 
     }
   }
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("#/events/madinah-nights");
+  await page.locator(".mobile-cta a").click();
+  await expect(page).toHaveURL(/#\/events\/madinah-nights$/);
+  await expect(page.locator("#booking")).toBeFocused();
+  const skip = page.getByRole("link", { name: "تخطّي إلى المحتوى" });
+  await skip.focus();
+  await skip.click();
+  await expect(page.locator("main")).toBeFocused();
+  await expect(page).toHaveURL(/#\/events\/madinah-nights$/);
   await page.goto("#/");
   await page.screenshot({ path: info.outputPath("home-mobile.png"), fullPage: true });
   await page.getByRole("button", { name: "القائمة" }).click();

@@ -11,9 +11,12 @@ export function Layout() {
   }, [pathname]);
   return (
     <>
-      <a href="#main" className="skip-link">تخطّي إلى المحتوى</a>
+      <a href="#main" className="skip-link" onClick={(e) => {
+        e.preventDefault();
+        document.getElementById("main")?.focus();
+      }}>تخطّي إلى المحتوى</a>
       <Header />
-      <main id="main"><Outlet /></main>
+      <main id="main" tabIndex={-1}><Outlet /></main>
       <Footer />
       <AssistantWidget />
     </>

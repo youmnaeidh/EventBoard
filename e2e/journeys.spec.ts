@@ -182,6 +182,7 @@ test.describe("organizer", () => {
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("أمسية اختبار e2e");
 
     await page.goto(`/organizer/events/${id}/edit`);
+    await expect(page.getByLabel("اسم الفعالية")).toHaveValue("أمسية اختبار e2e");
     await page.getByLabel("اسم الفعالية").fill("أمسية اختبار e2e معدّلة");
     await page.getByRole("button", { name: "حفظ التعديلات" }).click();
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("أمسية اختبار e2e معدّلة");

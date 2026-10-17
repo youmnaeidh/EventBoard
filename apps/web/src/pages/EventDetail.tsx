@@ -55,7 +55,7 @@ function BookingPanel({ event, myBooking }: { event: EventItem; myBooking: Event
   const fill = event.capacity && event.seatsLeft !== null ? Math.round(((event.capacity - event.seatsLeft) / event.capacity) * 100) : null;
 
   return (
-    <aside className="ticket" id="booking" aria-label="الحجز">
+    <aside className="ticket" id="booking" tabIndex={-1} aria-label="الحجز">
       <div className="ticket-top">
         <span className="ticket-label">{event.isFree ? "الدخول" : "سعر التذكرة"}</span>
         <b className="ticket-price">{priceLabel(event.price)}</b>
@@ -283,7 +283,12 @@ export default function EventDetail() {
       {event.requiresBooking && event.status !== "ended" && !q.data.myBooking && event.seatsLeft !== 0 && (
         <div className="mobile-cta">
           <span><small>{event.isFree ? "الدخول" : "التذكرة"}</small><b>{priceLabel(event.price)}</b></span>
-          <a href="#booking" className="btn btn-primary"><Icon name="ticket" size={18} />احجز مكانك</a>
+          <a href="#booking" className="btn btn-primary" onClick={(e) => {
+            e.preventDefault();
+            const panel = document.getElementById("booking");
+            panel?.scrollIntoView({ behavior: "smooth", block: "start" });
+            panel?.focus({ preventScroll: true });
+          }}><Icon name="ticket" size={18} />احجز مكانك</a>
         </div>
       )}
 

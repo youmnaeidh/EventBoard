@@ -138,6 +138,8 @@ export default function EventForm() {
 
   if (editing && existing.isError) return <ErrorBox message="ما قدرنا نحمّل الفعالية" onRetry={() => existing.refetch()} />;
 
+  if (editing && (!loaded || existing.isPending)) return <i className="skel" role="status" aria-label="جاري تحميل الفعالية" style={{ height: 300 }} />;
+
   const pickSlot = (weekday: number, hour: number) => {
     const hours = hoursBetween(fromLocalInput(f.startsAt), fromLocalInput(f.endsAt));
     const start = nextSlot(f.startsAt, weekday, hour);

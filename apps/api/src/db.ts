@@ -5,9 +5,13 @@ import { config } from "./config.js";
 pg.types.setTypeParser(1700, (v) => (v === null ? null : Number(v)));
 pg.types.setTypeParser(20, (v) => (v === null ? null : Number(v)));
 
+// pg reads SSL options from the URL, overriding a separate ssl object.
+// Require certificate and hostname verification for hosted PostgreSQL.
+const databaseUrl = new URL(config.DATABASE_URL);
+if (config.DATABASE_SSL === "true") databaseUrl.searchParams.set("sslmode", "verify-full");
+
 export const pool = new pg.Pool({
-  connectionString: config.DATABASE_URL,
-  ssl: config.DATABASE_SSL === "true" ? { rejectUnauthorized: false } : undefined,
+  connectionString: databaseUrl.toString(),
   max: 10
 });
 

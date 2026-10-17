@@ -70,7 +70,7 @@ jobs:
           AUTH_RATE_LIMIT: "1000"
           WEB_DIST: ${{ github.workspace }}/apps/web/dist
         run: nohup node apps/api/dist/server.js > api.log 2>&1 &
-      - run: npx wait-on http://localhost:4000/api/health http://localhost:8001/health --timeout 90000
+      - run: npx wait-on http-get://localhost:4000/api/health http-get://localhost:8001/health --timeout 90000
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
       - if: failure()

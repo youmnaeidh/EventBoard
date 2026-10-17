@@ -59,7 +59,7 @@ test("cross-origin registration, favourites, booking, ticket and cancellation", 
   });
   expect(result.ok()).toBeTruthy();
   const events = (await result.json()).events as { slug: string; seatsLeft: number | null; status: string }[];
-  const event = events.find(e => e.status !== "ended" && (e.seatsLeft ?? 0) >= 2);
+  const event = events.find(e => e.status === "upcoming" && (e.seatsLeft ?? 0) >= 2);
   expect(event, "the seeded catalogue must contain a bookable event").toBeTruthy();
   await page.goto(`#/events/${event!.slug}`);
   const fav = page.locator(".detail-actions .fav-labeled").first();

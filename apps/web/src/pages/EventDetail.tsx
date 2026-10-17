@@ -77,7 +77,9 @@ function BookingPanel({ event, myBooking }: { event: EventItem; myBooking: Event
             <p className="ticket-note ok"><Icon name="check" size={18} />حجزك مؤكد: <b className="num">{myBooking.seats}</b> {myBooking.seats === 1 ? "مقعد" : "مقاعد"}</p>
             <div className="qr"><QRCodeSVG title="رمز QR لتذكرتك" value={myBooking.ticketCode} size={132} level="M" bgColor="transparent" fgColor="#24172c" /></div>
             <code className="ticket-code num">{myBooking.ticketCode}</code>
-            <button type="button" className="btn btn-ghost btn-sm" disabled={cancel.isPending} onClick={() => confirm("تأكيد إلغاء الحجز؟") && cancel.mutate()}>إلغاء الحجز</button>
+            {event.status === "upcoming" ? (
+              <button type="button" className="btn btn-ghost btn-sm" disabled={cancel.isPending} onClick={() => confirm("تأكيد إلغاء الحجز؟") && cancel.mutate()}>إلغاء الحجز</button>
+            ) : <p className="hint">بدأت الفعالية، ما تقدر تلغي الحجز.</p>}
           </div>
         ) : soldOut ? (
           <p className="ticket-note warn">اكتمل العدد. احفظ الفعالية وراقب الفعاليات المشابهة.</p>

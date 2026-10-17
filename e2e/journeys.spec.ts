@@ -94,11 +94,11 @@ test.describe("attendee", () => {
     const events = (await res.json()).events as { slug: string; seatsLeft: number | null; myBooking?: unknown; status: string; title: string }[];
     let target: string | null = null;
     for (const e of events) {
-      if (e.status === "ended" || !e.seatsLeft) continue;
+      if (e.status !== "upcoming" || (e.seatsLeft ?? 0) < 2) continue;
       const detail = await (await page.request.get(`/api/events/${e.slug}`)).json();
       if (!detail.myBooking) { target = e.slug; break; }
     }
-    test.skip(!target, "demo user already booked every bookable event");
+    expect(target, "seed must include an upcoming event with two available seats").toBeTruthy();
     await page.goto(`/events/${target}`);
     await page.getByRole("button", { name: "زد" }).click();
     await page.getByRole("button", { name: "احجز الآن" }).click();

@@ -68,12 +68,23 @@ jobs:
           AI_SERVICE_URL: http://localhost:8001
           AI_SERVICE_TOKEN: ci-token
           AUTH_RATE_LIMIT: "1000"
+          PUBLIC_WEB_ORIGIN: http://127.0.0.1:4173
           WEB_DIST: ${{ github.workspace }}/apps/web/dist
         run: nohup node apps/api/dist/server.js > api.log 2>&1 &
       - run: npx wait-on http-get://localhost:4000/api/health http-get://localhost:8001/health --timeout 90000
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
-      - if: failure()
+      - name: Build the actual GitHub Pages variant
+        env:
+          VITE_API_BASE_URL: http://localhost:4000
+        run: npm run build:pages -w apps/web
+      - name: Preview Pages at a separate origin
+        run: |
+          nohup npm run preview -w apps/web -- --host 127.0.0.1 --port 4173 > pages.log 2>&1 &
+          npx wait-on http-get://127.0.0.1:4173/EventBoard/ --timeout 30000
+      - name: Verify Pages routes, assets, bearer auth and mobile layout
+        run: npx playwright test --config playwright.pages.config.ts
+      - if: always()
         uses: actions/upload-artifact@v4
         with:
           name: e2e-debug
@@ -81,3 +92,4 @@ jobs:
             test-results
             api.log
             services/ai/ai.log
+            pages.log

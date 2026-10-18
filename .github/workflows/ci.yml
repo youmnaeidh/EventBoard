@@ -80,7 +80,7 @@ jobs:
         run: npm run build:pages -w apps/web
       - name: Preview Pages at a separate origin
         run: |
-          nohup npm run preview -w apps/web -- --host 127.0.0.1 --port 4173 > pages.log 2>&1 &
+          nohup npm run preview -w apps/web -- --mode github-pages --host 127.0.0.1 --port 4173 > pages.log 2>&1 &
           npx wait-on http-get://127.0.0.1:4173/EventBoard/ --timeout 30000
       - name: Verify Pages routes, assets, bearer auth and mobile layout
         run: npx playwright test --config playwright.pages.config.ts

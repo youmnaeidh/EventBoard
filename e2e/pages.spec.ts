@@ -71,7 +71,8 @@ test("bearer login persists after reload and logout clears it without cookies", 
   expect(calls.every(h => !h.cookie)).toBeTruthy();
   await page.locator(".avatar-btn").click();
   await page.getByRole("button", { name: "تسجيل الخروج" }).click();
-  expect(await page.evaluate(k => sessionStorage.getItem(k), tokenKey)).toBeNull();
+  await expect(page.locator(".avatar-btn")).toHaveCount(0);
+  expect(await page.evaluate(k => sessionStorage.getItem(k) === null, tokenKey)).toBe(true);
   await page.reload();
   await expect(page.locator(".avatar-btn")).toHaveCount(0);
 });

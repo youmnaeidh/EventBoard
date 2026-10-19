@@ -1,7 +1,38 @@
 import { expect, test, type Page } from "@playwright/test";
+import { readFile } from "node:fs/promises";
+import { extname, resolve, sep } from "node:path";
 
 const apiOrigin = process.env.E2E_API_URL ?? "http://localhost:4000";
 const tokenKey = "eventboard-demo-access-token";
+
+// Before cutover, serve only the built frontend in the browser's expected Pages
+// origin. API requests still reach the real Render services and Neon database.
+test.beforeEach(async ({ page, baseURL }) => {
+  if (!process.env.E2E_PAGES_ARTIFACT) return;
+  const root = resolve(process.env.E2E_PAGES_ARTIFACT);
+  const base = new URL(baseURL!);
+  const types: Record<string, string> = {
+    ".html": "text/html", ".js": "application/javascript", ".css": "text/css",
+    ".json": "application/json", ".svg": "image/svg+xml", ".png": "image/png",
+    ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp",
+    ".woff": "font/woff", ".woff2": "font/woff2", ".mp4": "video/mp4",
+    ".ico": "image/x-icon"
+  };
+  await page.route(`${base.origin}${base.pathname}**`, async route => {
+    const pathname = decodeURIComponent(new URL(route.request().url()).pathname);
+    const file = resolve(root, pathname.slice(base.pathname.length) || "index.html");
+    if (!file.startsWith(root + sep)) {
+      await route.fulfill({ status: 403 });
+      return;
+    }
+    try {
+      const body = await readFile(file);
+      await route.fulfill({ status: 200, contentType: types[extname(file)] ?? "application/octet-stream", body });
+    } catch {
+      await route.fulfill({ status: 404, body: "Asset not found" });
+    }
+  });
+});
 
 async function login(page: Page, role: "attendee" | "organizer" = "attendee") {
   await page.goto("#/login");
@@ -17,7 +48,7 @@ test("Pages base path loads images, video, fonts and hash deep links", async ({ 
   await page.goto("./");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("المدينة المنورة");
   await expect(page.locator(".hero video source")).toHaveAttribute("src", "/EventBoard/assets/video/madinah-intro.mp4");
-  expect((await page.request.get("assets/video/madinah-intro.mp4")).ok()).toBeTruthy();
+  expect(await page.evaluate(async () => (await fetch("assets/video/madinah-intro.mp4")).ok)).toBeTruthy();
   await expect(page.locator(".row:not(.row-skel)").first()).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
   await page.screenshot({ path: info.outputPath("home-desktop.png"), fullPage: true });

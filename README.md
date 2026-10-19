@@ -8,7 +8,7 @@
 > (the original was a static front-end). Same identity (logo, colours, Madinah video, Arabic-first
 > experience); everything underneath was rebuilt as a full-stack, data-driven product.
 
-**Public demo:** [youmnaeidh.github.io/EventBoard](https://youmnaeidh.github.io/EventBoard/) — currently v1. v2 is staged on [`release/eventboard-v2-pages`](https://github.com/youmnaeidh/EventBoard/tree/release/eventboard-v2-pages); public cutover follows verification of the hosted API and Neon database. See [release status](docs/release-status.md).
+**Public demo:** [youmnaeidh.github.io/EventBoard](https://youmnaeidh.github.io/EventBoard/) — the last published build is v1. The tested v2 release was merged into `main` on October 19; CI and automatic Pages publication are queued during a GitHub Actions/Pages incident. See [release status](docs/release-status.md).
 
 **v2 demo accounts:** `demo@eventboard.demo` (attendee) and `organizer@eventboard.demo` (organizer), password `Demo#2026`. All events, accounts, reservations and analytics are demonstration data. A demo ticket is not a real reservation or admission pass.
 
@@ -92,7 +92,7 @@ Highlights: six concurrent bookings on a 3-seat event never oversell; the API↔
 circuit-breaker behaviour); e2e covers search → book → ticket → cancel, reviews, favourites, organizer create/edit/delete with the live forecast, and
 overflow checks on mobile. Five additional Pages tests exercise `/EventBoard/` assets, hash-route reloads, bearer authentication without third-party cookies, favourites and bookings, and layouts at 390px and 320px. CI runs PostgreSQL and the actual Python service for browser tests.
 
-**Verified release:** [CI run 39154465651](https://github.com/youmnaeidh/EventBoard/actions/runs/39154465651) passed all **89 tests** and both production builds. On October 19, [hosted verification 39211414937](https://github.com/youmnaeidh/EventBoard/actions/runs/39211414937) also passed **all 5 browser checks against Render and Neon**, including booking persistence, cross-origin authentication, AI forecasts and mobile layouts. The Pages source setting and public cutover remain pending.
+**Verified release:** [CI run 39154465651](https://github.com/youmnaeidh/EventBoard/actions/runs/39154465651) passed all **89 tests** and both production builds. On October 19, [hosted verification 39211414937](https://github.com/youmnaeidh/EventBoard/actions/runs/39211414937) also passed **all 5 browser checks against Render and Neon**, including booking persistence, cross-origin authentication, AI forecasts and mobile layouts. The owner confirmed switching Pages to GitHub Actions; public deployment and post-publication verification remain pending while GitHub processes the queued workflow.
 
 ## Screenshots
 
@@ -121,7 +121,7 @@ Actual Playwright captures from the passing hosted verification, using synthetic
 - The forecast's seasonal/weekday effects are assumptions I encoded when generating training data; swap in real bookings to retrain (`ForecastModel.fit`).
 - The Claude-backed assistant path and the optional dense-embedding search are implemented and unit-tested with mocks, but were not exercised with a live API key / model weights during development.
 - No offline evaluation of the recommender yet (needs real interaction data to be meaningful).
-- The API and AI service are live on Render Free; Neon Free is provisioned and seeded. The public URL remains v1 until hosted browser verification and Pages cutover are complete. [Current evidence and remaining work](docs/release-status.md).
+- The API and AI service are live on Render Free; Neon Free is provisioned and seeded. Hosted browser verification passed; the public cutover is waiting for GitHub Actions/Pages recovery. [Current evidence and remaining work](docs/release-status.md).
 - Render Free services can sleep, causing cold-start delays. API and AI share the workspace's free usage allowance; Neon Free also has resource quotas. This demo has no uptime guarantee.
 - Map tiles come from OpenStreetMap at runtime.
 
@@ -143,4 +143,4 @@ event artwork are from the original project. v2 design, architecture, code and d
 
 ## Hosting on the original GitHub Pages URL
 
-The v2 frontend builds for `https://youmnaeidh.github.io/EventBoard/` using HashRouter, so refreshes and deep links retain the repository base path. After cutover, `.github/workflows/deploy-pages.yml` publishes after successful CI on `main`; it checks the hosted services before deployment and the actual public website afterward. The current staging branch does not publish. See [DEPLOYMENT.md](DEPLOYMENT.md).
+The v2 frontend builds for `https://youmnaeidh.github.io/EventBoard/` using HashRouter, so refreshes and deep links retain the repository base path. After cutover, `.github/workflows/deploy-pages.yml` publishes after successful CI on `main`; it checks the hosted services before deployment and the actual public website afterward. The release was merged after verification; CI on `main` is queued during the GitHub incident. See [DEPLOYMENT.md](DEPLOYMENT.md).

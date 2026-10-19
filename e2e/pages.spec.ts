@@ -96,7 +96,9 @@ test("cross-origin registration, favourites, booking, ticket and cancellation", 
   await page.goto(`#/events/${event!.slug}`);
   const fav = page.locator(".detail-actions .fav-labeled").first();
   await expect(fav).toHaveAttribute("aria-pressed", "false");
+  const savedFavorite = page.waitForResponse(r => r.url().endsWith("/favorite") && r.request().method() === "PUT");
   await fav.click();
+  expect((await savedFavorite).ok()).toBeTruthy();
   await expect(fav).toHaveAttribute("aria-pressed", "true");
   await page.reload();
   await expect(fav).toHaveAttribute("aria-pressed", "true");

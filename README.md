@@ -8,7 +8,9 @@
 > (the original was a static front-end). Same identity (logo, colours, Madinah video, Arabic-first
 > experience); everything underneath was rebuilt as a full-stack, data-driven product.
 
-Live demo (after verified cutover): https://youmnaeidh.github.io/EventBoard/ · Demo accounts: `demo@eventboard.demo` (attendee) and `organizer@eventboard.demo` (organizer), password `Demo#2026`.
+**Public demo:** [youmnaeidh.github.io/EventBoard](https://youmnaeidh.github.io/EventBoard/) — currently v1. v2 is staged on [`release/eventboard-v2-pages`](https://github.com/youmnaeidh/EventBoard/tree/release/eventboard-v2-pages); public cutover follows verification of the hosted API and Neon database. See [release status](docs/release-status.md).
+
+**v2 demo accounts:** `demo@eventboard.demo` (attendee) and `organizer@eventboard.demo` (organizer), password `Demo#2026`. All events, accounts, reservations and analytics are demonstration data. A demo ticket is not a real reservation or admission pass.
 
 ---
 
@@ -23,12 +25,12 @@ attendees find the right event quickly; organizers see demand *before* they plan
 | | v1 (2023 / 2026 portfolio edition) | **v2** |
 |---|---|---|
 | Architecture | Static HTML/CSS/JS, browser storage, CSV | React + TypeScript SPA · Node/Express API · PostgreSQL · Python AI service |
-| Data | Synthetic CSV, per-browser | Real relational model, transactions, migrations, seed + refresh |
+| Data | Synthetic CSV, per-browser | Synthetic data stored in PostgreSQL, transactions, migrations, seed + refresh |
 | Accounts & booking | None | Cookie/short-lived bearer sessions, roles, bookings with seat locking (no overselling), tickets with QR, reviews tied to attendance |
 | Search | Keyword filters | Arabic natural-language search ("ابغى شي عائلي الليلة") that shows what it understood |
 | Recommendations | Rule-based | Hybrid (content + collaborative + popularity + proximity + freshness) that **explains each recommendation** |
 | Organizer tools | Report on local clicks | Attendance **forecast with a confidence interval**, best-slot advice, demand-gap analysis, per-event funnel |
-| Quality | Manual | 33 API tests (real Postgres) · 27 AI tests · 5 web unit tests · 17 Playwright journeys · CI |
+| Quality | Manual | 35 API tests (real Postgres) · 27 AI tests · 5 web unit tests · 17 core + 5 Pages Playwright journeys · CI |
 
 ## Features
 
@@ -44,21 +46,20 @@ with one click); per-event analytics (funnel, daily views, sources, ratings); a 
 ## Architecture
 
 ```mermaid
-flowchart LR
-  Browser["React SPA<br/>(Vite, RTL, Leaflet)"] -- "Cross-origin API / bearer token" --> API["Express API<br/>TypeScript, zod, pg"]
-  API -- SQL --> PG[("PostgreSQL 16")]
-  API -- "Bearer token · circuit breaker · fallbacks" --> AI["FastAPI AI service<br/>search · recommend · forecast · demand · assistant"]
-  AI -. optional .-> LLM["Claude API<br/>(assistant wording only)"]
+flowchart TD
+  Browser["GitHub Pages: React, TypeScript, RTL"] -- "HTTPS and bearer authentication" --> API["Render Free: Express API"]
+  API -- "SQL with verified TLS" --> PG[("Neon Free: PostgreSQL")]
+  API -- "Authenticated requests" --> AI["Render Free: FastAPI and scikit-learn"]
 ```
 
 - The API owns all data and authentication. The AI service is **stateless**: it receives the events/behaviour it needs in each request and returns
   scores, reasons and forecasts. Users are re-indexed before the interaction matrix leaves the API; no personal data is sent.
 - **If the AI service is down** the API keeps working: search falls back to keyword matching, recommendations to interests + popularity, insights to simple
   grouping; the assistant and forecast report "unavailable" instead of failing the page.
-- The Render API can also serve a built web app in Docker-only mode, but the public v2 demo uses GitHub Pages + CORS restricted to the GitHub Pages origin with short-lived bearer authentication.
+- The Render API can also serve a built web app in Docker-only mode. The target public architecture uses GitHub Pages + CORS restricted to the GitHub Pages origin with short-lived bearer authentication.
 
-Stack: React 18, TypeScript, Vite, TanStack Query, React Router, Leaflet · Node 22, Express 4, zod, `pg` (parameterised SQL), bcrypt, helmet, rate limiting ·
-PostgreSQL 16 · Python 3.12, FastAPI, scikit-learn, NumPy/SciPy/pandas.
+Stack: React 18, TypeScript, Vite 7, TanStack Query, React Router 7, Leaflet · Node 22.12+, Express 4, zod, `pg` (parameterised SQL), bcrypt, helmet, rate limiting ·
+PostgreSQL (version 16 in CI) · Python 3.12, FastAPI, scikit-learn, NumPy/SciPy/pandas · Vitest 4 and Playwright.
 
 ## Run it
 
@@ -89,17 +90,29 @@ npm run build && npm run test:e2e         # Playwright, against a running stack 
 ```
 Highlights: six concurrent bookings on a 3-seat event never oversell; the API↔AI contract is tested against a stub server (including token and
 circuit-breaker behaviour); e2e covers search → book → ticket → cancel, reviews, favourites, organizer create/edit/delete with the live forecast, and
-overflow checks on mobile.
+overflow checks on mobile. Five additional Pages tests exercise `/EventBoard/` assets, hash-route reloads, bearer authentication without third-party cookies, favourites and bookings, and layouts at 390px and 320px. CI runs PostgreSQL and the actual Python service for browser tests.
+
+**Verified release:** [CI run 39154465651](https://github.com/youmnaeidh/EventBoard/actions/runs/39154465651) passed all **89 tests** and both production builds. On October 19, [hosted verification 39211414937](https://github.com/youmnaeidh/EventBoard/actions/runs/39211414937) also passed **all 5 browser checks against Render and Neon**, including booking persistence, cross-origin authentication, AI forecasts and mobile layouts. The Pages source setting and public cutover remain pending.
+
+## Screenshots
+
+Actual Playwright captures from the passing hosted verification, using synthetic data in Neon and the Render API/AI services. The production frontend is tested at its intended browser origin before public cutover.
+
+![EventBoard v2 desktop home](docs/screenshots/home-desktop.png)
+
+![Organizer dashboard with synthetic analytics](docs/screenshots/organizer-desktop.png)
+
+[View the full mobile home screenshot](docs/screenshots/home-mobile.png). Mobile layouts were checked at 390px and 320px widths.
 
 ## Deploy
 
-`Dockerfile` (web + API), `services/ai/Dockerfile`, `docker-compose.yml`, `render.yaml` and `.github/workflows/ci.yml` are included. Set `JWT_SECRET`,
-`AI_SERVICE_TOKEN` and `DATABASE_URL` (+ `DATABASE_SSL=true` on managed Postgres). Set `AUTO_SEED=false` for a real deployment. Use [`DEPLOYMENT.md`](DEPLOYMENT.md) to deploy the free-tier architecture: GitHub Pages (static website), Render Free (API + AI), and external Neon Free PostgreSQL. Use Neon's **direct/non-pooled** connection string due to session-level locks in startup migrations.
+`Dockerfile.api` (API only), `Dockerfile` (local web + API), `services/ai/Dockerfile`, `docker-compose.yml`, `render.yaml` and GitHub Actions workflows are included. Set `JWT_SECRET`,
+`AI_SERVICE_TOKEN` and `DATABASE_URL` (+ `DATABASE_SSL=true` on Neon, which enforces certificate verification). The portfolio demo uses `AUTO_SEED=true` to initialize sample data. Use [`DEPLOYMENT.md`](DEPLOYMENT.md) for GitHub Pages, two Render Free web services and Neon Free PostgreSQL. Use Neon's **direct/non-pooled** connection string due to session-level locks in startup migrations. No expiring Render database or paid LLM key is required.
 
 ## Security & privacy notes
 
 - Passwords hashed with bcrypt; JWT in an `httpOnly`, `SameSite=Lax` cookie for same-origin development, or an 8-hour access token held in `sessionStorage` for the cross-origin public demo; login/register rate-limited; identical error for wrong email or password.
-- All SQL parameterised; every input validated with zod; Arabic error messages; strict CSP via helmet; reviews limited to events that started; organizers can only touch their own events.
+- All SQL parameterised; inputs validated with zod; Arabic error messages; reviews limited to events that started; organizers can only touch their own events. Helmet sets response headers on the API/same-origin deployment; these headers do not apply to the separate GitHub Pages frontend.
 - Behaviour tracking is limited to an anonymous random visitor id stored in the browser, used to personalise recommendations. Location is optional, rounded to ~100 m and kept in `sessionStorage`; it is sent only as query parameters on read requests.
 
 ## Known limits (said plainly)
@@ -108,7 +121,8 @@ overflow checks on mobile.
 - The forecast's seasonal/weekday effects are assumptions I encoded when generating training data; swap in real bookings to retrain (`ForecastModel.fit`).
 - The Claude-backed assistant path and the optional dense-embedding search are implemented and unit-tested with mocks, but were not exercised with a live API key / model weights during development.
 - No offline evaluation of the recommender yet (needs real interaction data to be meaningful).
-- Deployment files were written but not executed in my build environment; the production build was started with production-only dependencies as a check.
+- The API and AI service are live on Render Free; Neon Free is provisioned and seeded. The public URL remains v1 until hosted browser verification and Pages cutover are complete. [Current evidence and remaining work](docs/release-status.md).
+- Render Free services can sleep, causing cold-start delays. API and AI share the workspace's free usage allowance; Neon Free also has resource quotas. This demo has no uptime guarantee.
 - Map tiles come from OpenStreetMap at runtime.
 
 ## Repository layout
@@ -129,4 +143,4 @@ event artwork are from the original project. v2 design, architecture, code and d
 
 ## Hosting on the original GitHub Pages URL
 
-The v2 **static frontend** is built for `https://youmnaeidh.github.io/EventBoard/` and deployed with the opt-in `.github/workflows/deploy-pages.yml` workflow; the backend and AI run on Render Free, with Neon Free PostgreSQL. See [DEPLOYMENT.md](DEPLOYMENT.md). Do not trigger cutover until the backend and full demo are verified.
+The v2 frontend builds for `https://youmnaeidh.github.io/EventBoard/` using HashRouter, so refreshes and deep links retain the repository base path. After cutover, `.github/workflows/deploy-pages.yml` publishes after successful CI on `main`; it checks the hosted services before deployment and the actual public website afterward. The current staging branch does not publish. See [DEPLOYMENT.md](DEPLOYMENT.md).

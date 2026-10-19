@@ -2,7 +2,7 @@
 
 **Public GitHub Pages URL:** https://youmnaeidh.github.io/EventBoard/
 **Website:** React static files on GitHub Pages at `/EventBoard/` (HashRouter); API on Render `eventboard-api`; AI on Render `eventboard-ai`; database on **Neon Free PostgreSQL**.
-**The release branch does not publish the frontend. After cutover, successful CI on `main` triggers Pages deployment.**
+**The release branch does not publish the frontend. Successful CI on `main` triggers Pages deployment.**
 
 ## Keep the existing site running
 1. Back up the existing `main` repository and retain its commit history.
@@ -31,5 +31,5 @@
 - AI is deployed on Render Free at `https://eventboard-ai.onrender.com`; `/health` returned HTTP 200 on October 19, 2026, without a paid LLM configuration.
 - API is live on Render Free at `https://eventboard-api-orv8.onrender.com`. Neon Free PostgreSQL 16 is provisioned in Frankfurt; the startup migration and seed succeeded, and database row counts were verified directly on October 19.
 - All five hosted browser checks passed in [run 39211414937](https://github.com/youmnaeidh/EventBoard/actions/runs/39211414937), covering real Render/Neon requests from the intended Pages browser origin, including AI forecasts and mobile layout. The workflow saved actual screenshots to the release branch.
-- The owner confirmed switching Pages to GitHub Actions on October 19. PR #2 was merged as `de6caa91d5aabfae5c535f4b81ac715b3848a946`. [Main CI 39283205856](https://github.com/youmnaeidh/EventBoard/actions/runs/39283205856) is queued during GitHub's announced Actions/Pages incident. Automatic Pages publication follows successful CI. The configuration job will independently verify the source when runners resume; public-site verification and portfolio publication are still pending.
-- [Release status](docs/release-status.md) records test evidence, commits, the v1 archive and outstanding live-deployment gates.
+- Pages uses GitHub Actions. PR #2 merged as `de6caa91d5aabfae5c535f4b81ac715b3848a946`; [main CI 39283205856](https://github.com/youmnaeidh/EventBoard/actions/runs/39283205856) passed. [Deployment 39285162080](https://github.com/youmnaeidh/EventBoard/actions/runs/39285162080) published v2 at the original URL and passed five browser checks against the actual public website on October 19, 2026.
+- [Release status](docs/release-status.md) records test evidence, commits, the v1 archive and operating limits.

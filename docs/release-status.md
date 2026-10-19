@@ -1,20 +1,20 @@
 # EventBoard v2 release verification
 
-Updated **2026-10-19, after 19:08 Asia/Riyadh**. The verified release is merged into `main`; public cutover is queued, not yet verified.
+Updated **2026-10-20 (Asia/Riyadh)**. **v2 is publicly deployed and verified** at the original URL. Deployment completed and all five public browser checks passed on October 19 at approximately 19:34 Asia/Riyadh.
 
 ## Deployment state
 
 | Component | State | Evidence / next gate |
 |---|---|---|
-| Public website | Last published build: v1 | v2 publication and public browser checks await GitHub Actions; the backup branch remains at `a823c530c4fdf065638cb4c73d55095776e75389` |
+| Public website | v2 live at the original URL | [Live demo](https://youmnaeidh.github.io/EventBoard/); all five post-deployment browser tests passed |
 | v2 source | Verified release merged into `main` | PR #2 merged as `de6caa91d5aabfae5c535f4b81ac715b3848a946`; history continues from v1 |
 | AI service | Live on Render Free | [AI health endpoint](https://eventboard-ai.onrender.com/health); deployment `dep-dbanundg1s2s73crav8g` completed October 19 |
 | API service | Live on Render Free | [API health endpoint](https://eventboard-api-orv8.onrender.com/api/health); deployment `dep-dbanv0bbc2fs73c49jtg` completed October 19 |
 | Neon Free | Provisioned and seeded | `eventboard-v2`, PostgreSQL 16, Frankfurt; migrations completed and row counts independently verified |
-| GitHub Pages v2 | Tested; automatic publication queued | Owner confirmed the source change to GitHub Actions; configuration recheck and main CI await runners during a GitHub incident |
-| Portfolio | Current public site retained | v2 text, stack and screenshot update prepared on `release/eventboard-v2-portfolio`; publish after the public demo works |
+| GitHub Pages v2 | Publication successful | [Deployment 39285162080](https://github.com/youmnaeidh/EventBoard/actions/runs/39285162080); source confirmed as GitHub Actions |
+| Portfolio | v2 case study published | [Portfolio](https://youmnaeidh.github.io/portfolio/); [Pages build/deploy 39338363785](https://github.com/youmnaeidh/portfolio/actions/runs/39338363785) passed after PR #1 merged |
 
-Both services are in **My Workspace**, Frankfurt, on the **Free Docker** plan, running commit `0a95ef3767c1c7d95105d5d58d237570a0f98253`. Auto-deploy is disabled during staging. API startup applied `001_init.sql` and populated the synthetic dataset. A direct read from Neon on October 19 confirmed 30 events, 138 users, 278 bookings and 106 reviews before hosted browser verification. Counts can change as demo visitors and tests use the app.
+Both services are in **My Workspace**, Frankfurt, on the **Free Docker** plan, running commit `0a95ef3767c1c7d95105d5d58d237570a0f98253`. Render auto-deploy remains disabled; future backend releases require an explicit deployment. The verified backend code is unchanged by the later frontend-test and documentation commits. API startup applied `001_init.sql` and populated the synthetic dataset. A direct read from Neon on October 19 confirmed 30 events, 138 users, 278 bookings and 106 reviews before hosted browser verification. Counts can change as demo visitors and tests use the app.
 
 The Neon project is `rapid-king-63350061`, production branch `br-blue-math-b9qtx54w`, database `eventboard`, in the account's verified Free organization. The API uses the direct connection with certificate verification. Database credentials, JWT secret and the shared AI token are stored in service environments, not in Git. No paid LLM key was configured.
 
@@ -38,7 +38,7 @@ CI runs PostgreSQL and the actual Python service. Hosted integration is checked 
 
 **Hosted verification passed on October 19:** [run 39211414937](https://github.com/youmnaeidh/EventBoard/actions/runs/39211414937), commit `d296ba15aed3d6e2c4b10f454befa406979e3465`, **5/5 tests in 17.4 seconds**. Both health endpoints returned `status: ok`; AI reported `llm: false`, `dense: false`. Registration, bearer login/reload/logout, persisted favourites, booking/ticket/cancellation, organizer dashboard and actual API-to-AI forecasting passed against Render and Neon. Desktop and mobile widths of 390px and 320px passed. Earlier hosted failures were test synchronization races: logout needed to finish before checking token removal, and the optimistic favourite toggle needed its server save to finish before reload; both checks now wait for completion.
 
-[Pages configuration run 39211137081](https://github.com/youmnaeidh/EventBoard/actions/runs/39211137081) reported `Pages source: legacy`. The publication job was correctly skipped on the release branch. The owner subsequently confirmed switching the source to GitHub Actions at 19:08 Asia/Riyadh. Attempt 2 of that read-only configuration job remains queued, so its independent confirmation is pending.
+The owner switched Pages to GitHub Actions. [Production deployment 39285162080](https://github.com/youmnaeidh/EventBoard/actions/runs/39285162080) independently confirmed the source, passed the five hosted pre-publication tests, published the frontend and passed **all five tests on the actual public website in 19.7 seconds**, without frontend interception. [Main CI 39283205856](https://github.com/youmnaeidh/EventBoard/actions/runs/39283205856) also passed. GitHub's temporary Actions/Pages incident delayed the workflow but did not prevent successful publication.
 
 The browser suites cover registration/login/logout, favourites, booking persistence and cancellation, QR ticket, search, organizer create/edit/delete, forecasts and responsive layouts. The Pages suite additionally exercises bearer authentication without third-party cookies, hash-route refreshes, images/video/fonts, mobile navigation and focus handling at 390px and 320px widths.
 
@@ -66,8 +66,10 @@ Earlier failures were corrected before the passing run: cancellation tests now c
 | `e27dbdb` | Save actual hosted Desktop/Mobile screenshots after all five browser checks passed |
 | `b8408a8` | Document verified free deployments and release gates |
 | `de6caa9` | Merge the verified v2 release into `main`, preserving history |
+| `000df4a` | Record the temporary GitHub outage while publication was queued |
+| Portfolio `efe5efa` / `04ca92f` | Update and publish the v2 portfolio case study, stack and screenshot |
 
-This documentation commit adds the verified test evidence, screenshots, deployment status and revised English/Arabic README.
+The final documentation records the completed public deployment, test evidence, screenshots and operating limits. The prepared portfolio changes were merged in [portfolio PR #1](https://github.com/youmnaeidh/portfolio/pull/1) as `04ca92f99d7c5bfa0c3725988d4b4417f59ffe7f` after the public tests passed.
 
 ## v1 preservation
 
@@ -79,11 +81,11 @@ The backup branch preserves the original `main` commit from before v2. A separat
 
 Archiving does not remove history from the public repository. Preserving v1 as an ancestor means its code remains publicly retrievable after v2 is merged. A private copy would not make existing public commits, forks or cached copies private. No history rewrite or deletion has been performed.
 
-## Remaining release gates
+## Release outcome
 
-1. Allow [main CI 39283205856](https://github.com/youmnaeidh/EventBoard/actions/runs/39283205856) to run after GitHub recovers. GitHub reported an Actions, Pages and Webhooks incident beginning October 19 at 15:49 UTC (18:49 Asia/Riyadh), with delayed workflows and site builds: [official status](https://www.githubstatus.com/).
-2. Successful CI automatically triggers Pages publication, including a source-setting check, hosted integration checks and post-deployment tests on the real public URL. The new frontend has not yet been confirmed publicly deployed.
-3. Merge [portfolio PR #1](https://github.com/youmnaeidh/portfolio/pull/1) only after those public-site checks pass, then verify the portfolio's live EventBoard link and screenshot.
+The public v2 deployment and its Desktop/Mobile functional checks are complete. All tested flows passed: registration, login/reload/logout, favourite persistence, booking/ticket/cancellation and organizer AI forecast. Browser layout checks use Chromium at desktop and 390px/320px mobile viewports; they are not a real-device Safari test. No tested feature remains failing. Paid-LLM and optional dense-embedding integrations were not enabled or verified live.
+
+The original v1 backup and private Git bundle remain available. Secrets were not committed. Free-service cold starts and quotas remain normal operating limits.
 
 ## Free-tier and data limits
 

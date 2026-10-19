@@ -4,7 +4,7 @@
 
 نسخة مطوّرة من مشروع تخرجي. النسخة الأولى كانت واجهة ثابتة (HTML/CSS/JS) تحفظ بياناتها في المتصفح. هذي النسخة موقع كامل: واجهة React، وخادم Node، وقاعدة PostgreSQL، وخدمة ذكاء اصطناعي بـPython.
 
-**رابط العرض:** https://youmnaeidh.github.io/EventBoard/ — آخر نسخة منشورة هي v1. دُمجت v2 المختبرة في `main`، والنشر ينتظر معالجة GitHub Actions · **حسابات تجريبية:** `demo@eventboard.demo` (حاضر) و`organizer@eventboard.demo` (منظّم)، كلمة المرور `Demo#2026`.
+**رابط العرض:** https://youmnaeidh.github.io/EventBoard/ — **v2 منشورة وتعمل على الرابط الأصلي**، ونجح فحص الموقع العام على الكمبيوتر والجوال · **حسابات تجريبية:** `demo@eventboard.demo` (حاضر) و`organizer@eventboard.demo` (منظّم)، كلمة المرور `Demo#2026`.
 
 ## القصة وراء الفكرة
 
@@ -34,9 +34,9 @@
 
 ## حالة الإصدار
 
-خدمتا API وAI وصلتا إلى حالة Live على Render Free داخل My Workspace، وقاعدة Neon Free أُنشئت ونُفّذت الهجرات وإضافة البيانات التجريبية بنجاح. نجحت اختبارات المتصفح على الخدمات المنشورة، وأكدت المالكة تحويل مصدر Pages إلى GitHub Actions. دُمجت v2 في `main`، لكن النشر وفحص الموقع العام ينتظران زوال عطل GitHub Actions وPages المعلن. تفاصيل الفحوصات والـcommits والمتبقي في [سجل الإصدار](docs/release-status.md).
+خدمتا API وAI وصلتا إلى حالة Live على Render Free داخل My Workspace، وقاعدة Neon Free أُنشئت ونُفّذت الهجرات وإضافة البيانات التجريبية بنجاح. نجحت اختبارات المتصفح على الخدمات المنشورة، وأكدت المالكة تحويل مصدر Pages إلى GitHub Actions. دُمجت v2 في `main`، واكتمل النشر ونجحت اختبارات الموقع العام الخمسة بتاريخ 19 أكتوبر 2026. تفاصيل الفحوصات والـcommits وحدود النسخة في [سجل الإصدار](docs/release-status.md).
 
-نجحت **الاختبارات الـ89 كاملة** وبناء الواجهة العادي وبناء GitHub Pages في [تشغيل CI](https://github.com/youmnaeidh/EventBoard/actions/runs/39154465651). ونجحت أيضًا **اختبارات المتصفح الخمسة على Render وNeon الفعليتين** في [تشغيل 19 أكتوبر 2026](https://github.com/youmnaeidh/EventBoard/actions/runs/39211414937)، بما يشمل الحجز والمفضلة والدخول والخروج وتوقّع AI وعرض الجوال. لقطات الشاشة الفعلية موجودة في [README الإنجليزي](README.md#screenshots). المتبقي هو اكتمال النشر بعد تعافي GitHub وفحص الرابط العام ثم نشر تحديث Portfolio.
+نجحت **الاختبارات الـ89 كاملة** وبناء الواجهة العادي وبناء GitHub Pages في [تشغيل CI](https://github.com/youmnaeidh/EventBoard/actions/runs/39154465651). ونجحت أيضًا **اختبارات المتصفح الخمسة على Render وNeon الفعليتين** في [تشغيل 19 أكتوبر 2026](https://github.com/youmnaeidh/EventBoard/actions/runs/39211414937)، بما يشمل الحجز والمفضلة والدخول والخروج وتوقّع AI وعرض الجوال. لقطات الشاشة الفعلية موجودة في [README الإنجليزي](README.md#screenshots). نجح أيضًا [النشر وفحص الموقع العام الفعلي](https://github.com/youmnaeidh/EventBoard/actions/runs/39285162080) دون محاكاة للواجهة.
 
 ## تشغيل المشروع
 
@@ -56,7 +56,7 @@ npm run build && npm run test:e2e
 
 ## النشر
 
-الواجهة تُنشر على GitHub Pages بنفس المسار `/EventBoard/`، وواجهة API وخدمة AI على Render Free، وقاعدة البيانات على Neon Free. بعد التحويل، ينشر `.github/workflows/deploy-pages.yml` تغييرات `main` بعد نجاح CI، ويفحص الخدمات قبل النشر والموقع العام بعده. فرع الإصدار الحالي لا ينشر الواجهة للعامة. راجع [`DEPLOYMENT.md`](DEPLOYMENT.md).
+الواجهة تُنشر على GitHub Pages بنفس المسار `/EventBoard/`، وواجهة API وخدمة AI على Render Free، وقاعدة البيانات على Neon Free. ينشر `.github/workflows/deploy-pages.yml` تغييرات `main` بعد نجاح CI، ويفحص الخدمات قبل النشر والموقع العام بعده. فرع الإصدار الحالي لا ينشر الواجهة للعامة. راجع [`DEPLOYMENT.md`](DEPLOYMENT.md).
 
 ## حدود صريحة
 

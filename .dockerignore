@@ -1,0 +1,13 @@
+node_modules
+**/node_modules
+**/dist
+.git
+test-results
+services/ai/.venv
+**/__pycache__
+**/.env
+**/.env.*
+**/*.log
+**/.pytest_cache
+**/playwright-report
+**/coverage

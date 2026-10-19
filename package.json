@@ -1,0 +1,26 @@
+{
+  "name": "eventboard",
+  "private": true,
+  "version": "2.0.0",
+  "description": "EventBoard v2 - Madinah events platform with AI-powered discovery and organizer analytics",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:api": "npm run dev -w apps/api",
+    "dev:web": "npm run dev -w apps/web",
+    "build": "npm run build -w apps/web && npm run build -w apps/api",
+    "start": "npm run start -w apps/api",
+    "migrate": "npm run migrate -w apps/api",
+    "seed": "npm run seed -w apps/api",
+    "test": "npm run test -w apps/api && npm run test -w apps/web",
+    "test:e2e": "playwright test"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.0",
+    "vite": "7.3.7"
+  }
+}

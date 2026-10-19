@@ -1,0 +1,36 @@
+# One command, whole stack:  docker compose up --build   ->  http://localhost:4000
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: eventboard
+    volumes: [dbdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d eventboard"]
+      interval: 5s
+      retries: 10
+
+  ai:
+    build: ./services/ai
+    environment:
+      AI_SERVICE_TOKEN: ${AI_SERVICE_TOKEN:-dev-shared-secret}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-5-5}
+
+  web:
+    build: .
+    depends_on:
+      db: { condition: service_healthy }
+      ai: { condition: service_started }
+    ports: ["4000:4000"]
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/eventboard
+      JWT_SECRET: ${JWT_SECRET:-dev-only-secret-dev-only-secret-0123456789}
+      AI_SERVICE_URL: http://ai:8001
+      AI_SERVICE_TOKEN: ${AI_SERVICE_TOKEN:-dev-shared-secret}
+      NODE_ENV: production
+      COOKIE_SECURE: "false"   # plain http on localhost; remove behind HTTPS
+
+volumes:
+  dbdata:

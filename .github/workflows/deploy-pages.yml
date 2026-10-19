@@ -1,0 +1,98 @@
+name: Publish EventBoard v2 to GitHub Pages
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: [CI]
+    branches: [main]
+    types: [completed]
+  push:
+    branches: [release/eventboard-v2-pages]
+    paths: [.github/workflows/deploy-pages.yml]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  configuration:
+    runs-on: ubuntu-latest
+    permissions:
+      pages: read
+    outputs:
+      build_type: ${{ steps.pages.outputs.build_type }}
+    steps:
+      - uses: actions/github-script@v7
+        id: pages
+        with:
+          script: |
+            const { data } = await github.request('GET /repos/{owner}/{repo}/pages', context.repo);
+            core.setOutput('build_type', data.build_type);
+            core.notice(`Pages source: ${data.build_type}; public URL: ${data.html_url}`);
+            await core.summary.addHeading('Pages publishing configuration')
+              .addRaw(`Source: ${data.build_type}. URL: ${data.html_url}.\n`)
+              .addRaw(data.build_type === 'workflow' ? 'Ready for Actions deployment.' : 'Before merging, change Settings > Pages > Source to GitHub Actions.')
+              .write();
+
+  deploy:
+    needs: configuration
+    if: github.ref == 'refs/heads/main' && (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    env:
+      BACKEND_URL: ${{ vars.EVENTBOARD_API_URL || 'https://eventboard-api-orv8.onrender.com' }}
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Require Actions as the Pages source
+        env:
+          PAGES_BUILD_TYPE: ${{ needs.configuration.outputs.build_type }}
+        run: test "$PAGES_BUILD_TYPE" = workflow
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Check API URL is ready (do not deploy a broken demo)
+        run: |
+          case "$BACKEND_URL" in https://*.onrender.com) ;; *) echo "Expected live Render https origin"; exit 1 ;; esac
+          curl --fail --silent --show-error --retry 5 --retry-all-errors --retry-delay 5 --max-time 120 https://eventboard-ai.onrender.com/health
+          curl --fail --silent --show-error --retry 5 --retry-all-errors --retry-delay 5 --max-time 120 "$BACKEND_URL/api/health"
+      - run: npm ci
+      - name: Build Pages app
+        env:
+          VITE_API_BASE_URL: ${{ env.BACKEND_URL }}
+        run: npm run build:pages -w apps/web
+      - run: npx playwright install --with-deps chromium
+      - name: Verify built frontend with the hosted services before publishing
+        env:
+          E2E_API_URL: ${{ env.BACKEND_URL }}
+          E2E_PAGES_URL: https://youmnaeidh.github.io/EventBoard/
+          E2E_PAGES_ARTIFACT: apps/web/dist
+        run: npx playwright test --config playwright.pages.config.ts
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/web/dist
+      - id: deploy
+        uses: actions/deploy-pages@v4
+      - name: Verify the actual public Pages website on desktop and mobile
+        env:
+          E2E_API_URL: ${{ env.BACKEND_URL }}
+          E2E_PAGES_URL: https://youmnaeidh.github.io/EventBoard/
+        run: npx playwright test --config playwright.pages.config.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: public-pages-browser-evidence
+          path: test-results
+          retention-days: 30

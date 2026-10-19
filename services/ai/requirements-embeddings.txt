@@ -1,0 +1,4 @@
+# Optional: dense multilingual embeddings for semantic search (set EMBEDDING_MODEL, e.g.
+# intfloat/multilingual-e5-small). Without it the service runs lexical + char n-gram retrieval.
+-r requirements.txt
+sentence-transformers>=3.0

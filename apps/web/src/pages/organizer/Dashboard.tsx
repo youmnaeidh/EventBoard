@@ -55,7 +55,7 @@ export default function Dashboard() {
             <Tile label="فعاليات نشطة" value={formatNumber(active.length)} sub={`من ${formatNumber(rows.length)} فعالية`} />
             <Tile label="المشاهدات" value={formatNumber(totals.views)} />
             <Tile label="المقاعد المحجوزة" value={formatNumber(totals.seats)} sub={fill !== null ? `امتلاء ${fill}% من السعة` : undefined} />
-            <Tile label="الإيراد" value={money(totals.revenue)} />
+            <Tile label="قيمة الحجوزات التجريبية" value={money(totals.revenue)} sub="بالأسعار المحفوظة؛ تستثني الأسعار التاريخية المجهولة، وليست مبالغ محصّلة" />
           </div>
 
           {topGap && (
@@ -85,6 +85,7 @@ export default function Dashboard() {
                     <tr key={event.id}>
                       <th scope="row">
                         <Link to={`/organizer/events/${event.id}`} className="tbl-title">{event.title}</Link>
+                        {event.publicationStatus==='draft' && <span className="badge badge-tonight">مسودة غير منشورة</span>}
                         <small className="muted-sm">{dayNumber(event.startsAt)} {monthShort(event.startsAt)} · {timeOfDay(event.startsAt)} · {event.district}</small>
                       </th>
                       <td><span className={`badge ${STATUS[event.status]!.cls}`}>{STATUS[event.status]!.text}</span></td>

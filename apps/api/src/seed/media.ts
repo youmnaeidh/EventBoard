@@ -92,7 +92,7 @@ export const sampleMedia: Record<string, { image: string; details: Record<string
     }
   },
   "palm-tale-kids-theatre": {
-    "image": "https://unsplash.com/photos/wfuib0w8p58/download?force=true",
+    "image": "https://images.unsplash.com/photo-1707419514638-a29bff87d3b9?auto=format&fit=crop&w=1200&q=78",
     "details": {
       "imageSource": "https://unsplash.com/photos/wfuib0w8p58",
       "imageCredit": "Marina Marcato",

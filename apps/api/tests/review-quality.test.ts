@@ -37,6 +37,10 @@ describe('review quality',()=>{
     const changed=await owner.agent.put('/api/organizer/events/'+made.body.event.id).send({...payload,lat:undefined,lng:undefined,title:'عنوان جديد مع نفس المكان'});
     expect(changed.status).toBe(200); expect(changed.body.event.lat).toBe(24.441);
     expect(changed.body.event.image).toBe('/assets/events/book-fair.webp');
+    const hours=await owner.agent.put('/api/organizer/events/'+made.body.event.id).send({...payload,details:{dailyStart:'16:00',dailyEnd:'22:00'}});
+    expect(hours.status).toBe(200);
+    const cleared=await owner.agent.put('/api/organizer/events/'+made.body.event.id).send({...payload,details:{dailyStart:'',dailyEnd:''}});
+    expect(cleared.body.event.details.dailyStart).toBeUndefined();
   });
   it('snapshots booking price and keeps every analytics series in one date range',async()=>{
     const owner=await registerAgent('organizer'), visitor=await registerAgent('attendee');

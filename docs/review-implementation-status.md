@@ -30,6 +30,9 @@ Source: EventBoard_Review_2026-10-20_AR.md. Work is on draft PR #3, not producti
 ## Verification and release gates
 
 - First saved batch: all CI jobs passed before this continuation.
+- Continuation CI: 50 API tests, 5 web tests, 28 AI tests and the production web build passed
+  on commit 213fdc7. Browser/Pages end-to-end checks and the final follow-up commit are still
+  tracked in the PR checks; do not infer production readiness from unit tests alone.
 - Continuation: API TypeScript check passed locally. The local Windows dependency install is incomplete
   (workspace symlinks were denied and some optional/native packages are incomplete), so full verification runs in GitHub CI.
 - Added regression tests: complete media catalogue, draft privacy, booking-price snapshots,
@@ -47,4 +50,5 @@ Source: EventBoard_Review_2026-10-20_AR.md. Work is on draft PR #3, not producti
 - Final visual review with loaded photos on mobile/desktop; the local image-host downloads timed out.
 - Stronger human-judged Arabic relevance/typo/negation evaluation and recommender-vs-popularity/diversity evaluation.
 - Hosted AI outage root cause and deployment verification; health endpoints were not reachable from the current inspection tool.
+  Render reported no selected workspace; the available My Workspace requires user confirmation before logs can be read.
 - Release after passing CI, approved review-database migration and an explicit production deployment decision.

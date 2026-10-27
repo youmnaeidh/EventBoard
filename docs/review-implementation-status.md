@@ -30,18 +30,21 @@ Source: EventBoard_Review_2026-10-20_AR.md. Work is on draft PR #3, not producti
 ## Verification and release gates
 
 - First saved batch: all CI jobs passed before this continuation.
-- Continuation CI: 50 API tests, 5 web tests, 28 AI tests and the production web build passed
-  on commit 213fdc7. Browser/Pages end-to-end checks and the final follow-up commit are still
-  tracked in the PR checks; do not infer production readiness from unit tests alone.
+- All CI jobs passed on code commit 5a99e6ef619be7ceaf02571f041a3841b865d373 in run 40442830765:
+  API TypeScript, production web build, 50 API tests, 5 web tests, 28 AI tests,
+  17 browser journeys and 5 Pages/mobile tests. CI success is not a claim of production availability.
 - Continuation: API TypeScript check passed locally. The local Windows dependency install is incomplete
   (workspace symlinks were denied and some optional/native packages are incomplete), so full verification runs in GitHub CI.
 - Added regression tests: complete media catalogue, draft privacy, booking-price snapshots,
   analytics ranges, preserved coordinates/images, concurrent view deduplication, opening hours and forecast-slot consistency.
 - Versioned additive migrations: 002_review_quality.sql, 003_review_media.sql.
-- A request to test those migrations on isolated Neon branch dev-review-2026-10-27
-  (br-little-meadow-b9qiabdc) was rejected by the approval gate. It was NOT retried through another tool.
-- No production migration or deployment has been performed. Approval for the two migrations on the review branch
-  is required before a database-backed preview can be declared verified.
+- The initial migration request was denied and was not bypassed. After explicit user approval,
+  migrations 002 and 003 were applied atomically to dev-review-2026-10-27 (br-little-meadow-b9qiabdc).
+  Independent reads confirmed 30 sourced covers, 282 captured booking prices and 9 daily schedules;
+  event/booking/interaction counts remained 30 / 282 / 7,792.
+- Production was checked read-only: only 001_init.sql is recorded and none of the three review columns exist.
+  No production migration, service configuration change, restart, redeploy or merge has been performed.
+- See review-validation-2026-10-27.md for the database verification and Render observations.
 
 ## Remaining / not represented as completed
 
@@ -49,6 +52,8 @@ Source: EventBoard_Review_2026-10-20_AR.md. Work is on draft PR #3, not producti
 - Static social-card prerendering for GitHub Pages.
 - Final visual review with loaded photos on mobile/desktop; the local image-host downloads timed out.
 - Stronger human-judged Arabic relevance/typo/negation evaluation and recommender-vs-popularity/diversity evaluation.
-- Hosted AI outage root cause and deployment verification; health endpoints were not reachable from the current inspection tool.
-  Render reported no selected workspace; the available My Workspace requires user confirmation before logs can be read.
-- Release after passing CI, approved review-database migration and an explicit production deployment decision.
+- Hosted AI root cause and recovery remain unresolved. The user confirmed My Workspace and logs/events/metrics
+  were inspected. API logs contain AI HTTP 502 failures. No explicit crash/OOM event was returned.
+  Current HTTP availability could not be established from the inspection environment.
+  Live services have empty HTTP health-check paths, unlike render.yaml. Production recovery requires approval.
+- Release after final visual/preview verification and an explicit production deployment decision; CI and review-branch migrations have passed.

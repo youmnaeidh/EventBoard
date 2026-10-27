@@ -23,6 +23,7 @@ describe('review quality',()=>{
     const e=created.body.event;
     expect((await request(app).get('/api/events/'+e.id)).status).toBe(404);
     expect((await stranger.agent.get('/api/events/'+e.id)).status).toBe(404);
+    expect((await request(app).post('/api/track').send({type:'view',eventId:e.id,sessionId:'review-draft-session'})).status).toBe(404);
     expect((await owner.agent.get('/api/events/'+e.id)).status).toBe(200);
     expect((await stranger.agent.post('/api/events/'+e.id+'/bookings').send({seats:1})).status).toBe(404);
     const listed=await owner.agent.get('/api/events?status=all&limit=100');

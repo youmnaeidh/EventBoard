@@ -28,7 +28,7 @@ eventsRouter.get(
        FROM reviews r
        JOIN users u ON u.id = r.user_id
        JOIN events e ON e.id = r.event_id
-       WHERE length(r.comment) >= 20
+       WHERE length(r.comment) >= 20 AND e.publication_status='published'
        ORDER BY r.created_at DESC LIMIT $1`,
       [limit]
     );
@@ -124,7 +124,7 @@ eventsRouter.post(
     const user = req.user!;
 
     const event = await one<{ starts_at: Date; organizer_id: string | null }>(
-      "SELECT starts_at, organizer_id FROM events WHERE id = $1",
+      "SELECT starts_at, organizer_id FROM events WHERE id = $1 AND publication_status='published'",
       [id]
     );
     if (!event) throw notFound("هذي الفعالية غير موجودة");

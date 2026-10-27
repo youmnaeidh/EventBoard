@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { categoryStyle } from "../lib/categories";
 import { assetUrl } from "../lib/assets";
 import type { EventItem } from "../types";
@@ -14,8 +15,10 @@ function hash(text: string): number {
  * from the title and coloured from the category palette, so every imageless event still reads as a poster.
  */
 export function EventCover({ event, eager = false }: { event: Pick<EventItem, "image" | "category" | "title">; eager?: boolean }) {
-  if (event.image) {
-    return <img className="cover-img" src={assetUrl(event.image)} alt="" loading={eager ? "eager" : "lazy"} decoding="async" />;
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [event.image]);
+  if (event.image && !failed) {
+    return <img className="cover-img" src={assetUrl(event.image)} alt="" width={1200} height={800} loading={eager ? "eager" : "lazy"} decoding="async" onError={() => setFailed(true)} />;
   }
   const { bg, a, b, dark } = categoryStyle(event.category).poster;
   const ink = dark ? "#fff7ec" : "#25122f";

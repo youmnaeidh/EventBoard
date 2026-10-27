@@ -1,0 +1,5 @@
+/* Contrast must remain legible when touch browsers retain :hover. */
+.row:hover, .row:hover .stub, .row:hover .stub-day, .row:hover .row-title a,
+.row:hover .row-meta, .row:hover .row-reason { color: var(--poster-fg, var(--ink)); }
+.row:hover .row-reason { border-color: currentColor; }
+.demo-notice { padding: 10px 16px; margin-bottom: 12px; border-inline-start: 4px solid var(--orchid); background: var(--orchid-soft); color: var(--ink); font-size: 14px; }

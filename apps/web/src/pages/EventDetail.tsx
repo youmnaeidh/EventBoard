@@ -68,6 +68,7 @@ function BookingPanel({ event, myBooking }: { event: EventItem; myBooking: Event
       </div>
       <div className="ticket-tear" aria-hidden="true" />
       <div className="ticket-bottom">
+        <p className="demo-notice">نسخة تجريبية: لا يتم تحصيل مبالغ، وهذه التذكرة ليست تصريح دخول لفعالية حقيقية.</p>
         {ended ? (
           <p className="ticket-note">انتهت هذي الفعالية. شاركنا رأيك فيها من قسم التقييمات.</p>
         ) : !event.requiresBooking ? (
@@ -182,7 +183,7 @@ function ReviewsSection({ event, detail }: { event: EventItem; detail: EventDeta
       <ul className="review-list">
         {reviews.data?.reviews.filter((r) => r.comment).map((r) => (
           <li key={r.id} className="review">
-            <div className="review-top"><b>{r.authorName}</b>{r.verified && <span className="verified"><Icon name="check" size={13} />حضر الفعالية</span>}<Stars value={r.rating} size={14} /></div>
+            <div className="review-top"><b>{r.authorName}</b>{r.verified && <span className="verified"><Icon name="check" size={13} />حجز موثّق</span>}<Stars value={r.rating} size={14} /></div>
             <p>{r.comment}</p>
           </li>
         ))}
@@ -241,7 +242,7 @@ export default function EventDetail() {
             <div className="detail-tags">
               <span className="chip chip-cat">{event.category}</span>
               <span className="chip chip-soft">{event.eventType}</span>
-              {event.status === "live" && <span className="badge badge-live"><i className="live-dot" />جارية الحين</span>}
+              {event.status === "live" && <span className="badge badge-live"><i className="live-dot" />{whenLabel(event)}</span>}
               {event.status === "upcoming" && ["الليلة", "اليوم"].includes(whenLabel(event)) && <span className="badge badge-tonight">{whenLabel(event)}</span>}
             </div>
             <h1 className="detail-title">{event.title}</h1>

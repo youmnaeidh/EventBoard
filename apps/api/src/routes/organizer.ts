@@ -36,9 +36,8 @@ const eventSchema = z
     highlights: z.array(z.string().trim().min(2).max(80)).max(6).default([]),
     imageUrl: z
       .string()
-      .url()
       .max(500)
-      .refine((u) => u.startsWith("https://"), "رابط الصورة لازم يكون https")
+      .refine((u) => /^https:\/\/[^\s]+$/.test(u) || /^\/assets\/events\/[a-zA-Z0-9_-]+\.(?:webp|jpg|jpeg|png)$/.test(u), "استخدم رابط https أو صورة من مكتبة الفعاليات")
       .nullable()
       .optional()
   })

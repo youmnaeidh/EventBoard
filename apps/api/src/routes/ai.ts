@@ -14,6 +14,7 @@ import {
 } from "../services/aiClient.js";
 import { listEvents, type EventDto } from "../services/events.js";
 import { recordInteraction } from "../services/interactions.js";
+import { fallbackSearch, searchConstraints, withinConstraints } from "../services/searchConstraints.js";
 
 export const aiRouter = Router();
 
@@ -74,6 +75,7 @@ aiRouter.get(
   "/search",
   handler(async (req, res) => {
     const params = searchSchema.parse(req.query);
+    const constraints = searchConstraints(params.q);
     const loc = hasLocation(params) ? { lat: params.lat, lng: params.lng } : null;
     const { events } = await listEvents({
       category: params.category,
@@ -86,11 +88,12 @@ aiRouter.get(
       lat: loc?.lat,
       lng: loc?.lng
     });
-    const byId = new Map(events.map((e) => [e.id, e]));
+    const candidates = events.filter(e => withinConstraints(e, constraints));
+    const byId = new Map(candidates.map((e) => [e.id, e]));
 
     const ai = await callAi<SearchResponse>("/v1/search", {
       query: params.q,
-      events: events.map(toAiEvent),
+      events: candidates.map(toAiEvent),
       now: new Date().toISOString(),
       location: loc,
       limit: params.limit
@@ -105,8 +108,8 @@ aiRouter.get(
       });
       payload = { mode: "ai", engine: ai.engine, interpretation: ai.interpretation, chips: ai.chips, relaxed: ai.relaxed };
     } else {
-      results = basicSearch(params.q, events).slice(0, params.limit);
-      payload = { mode: "basic", engine: "keyword", interpretation: {}, chips: [], relaxed: false };
+      results = fallbackSearch(params.q, candidates).slice(0, params.limit);
+      payload = { mode: "basic", engine: "constrained-keyword", interpretation: constraints, chips: [constraints.free ? "مجانية" : "", constraints.maxPrice && !constraints.free ? `حتى ${constraints.maxPrice} ر.س` : "", constraints.when ? "الموعد المحدد في بحثك" : ""].filter(Boolean), relaxed: false };
     }
 
     // Logged for the organizer demand report: what people look for and whether they found it.

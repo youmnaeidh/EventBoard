@@ -226,7 +226,7 @@ export async function listEvents(
     LIMIT ${limit} OFFSET ${offset}`;
 
   const rows = await query<EventRow>(sql, params, client);
-  return { events: rows.map((row) => toEventDto(row, now)), total: Number(rows[0]?.total_count ?? 0) };
+  return { events: rows.map((row) => toEventDto({ ...row, distance_km: hasLocation ? row.distance_km : null }, now)), total: Number(rows[0]?.total_count ?? 0) };
 }
 
 export async function getEventByRef(

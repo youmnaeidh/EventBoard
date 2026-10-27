@@ -35,7 +35,7 @@ export function SmartSearch({ initial = "", size = "bar", onSubmit }: Props) {
         maxLength={200}
         autoComplete="off"
       />
-      <button type="submit" className="btn btn-primary smart-go"><Icon name="search" size={19} /><span>ابحث</span></button>
+      <button type="submit" className="btn btn-primary smart-go" aria-label="ابحث"><Icon name="search" size={19} /><span>ابحث</span></button>
     </form>
   );
 }

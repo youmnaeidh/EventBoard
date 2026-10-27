@@ -25,7 +25,7 @@ function fromEvent(e: EventItem): FormState {
   return {
     title: e.title, summary: e.summary, description: e.description, category: e.category, eventType: e.eventType, venue: e.venue, district: e.district,
     startsAt: toLocalInput(e.startsAt), endsAt: toLocalInput(e.endsAt), price: String(e.price), needsBooking: e.requiresBooking, capacity: e.capacity ? String(e.capacity) : "100",
-    audience: e.audience, highlights: e.highlights.join("\n"), imageUrl: e.image && e.image.startsWith("https://") ? e.image : ""
+    audience: e.audience, highlights: e.highlights.join("\n"), imageUrl: e.image ?? ""
   };
 }
 

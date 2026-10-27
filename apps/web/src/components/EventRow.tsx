@@ -28,7 +28,7 @@ export function catVars(category: string): CSSProperties {
 function badges(event: EventItem) {
   const out: { text: string; tone: "live" | "tonight" | "free" | "price" | "low" | "full" | "ended" }[] = [];
   const when = whenLabel(event);
-  if (event.status === "live") out.push({ text: "جارية الحين", tone: "live" });
+  if (event.status === "live") out.push({ text: sameLocalDay(event.startsAt, event.endsAt) ? "جارية الحين" : "مستمرة", tone: "live" });
   else if (event.status === "ended") out.push({ text: "انتهت", tone: "ended" });
   else if (when === "الليلة" || when === "اليوم") out.push({ text: when, tone: "tonight" });
   const seats = seatsLabel(event);

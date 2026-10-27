@@ -28,7 +28,7 @@ eventsRouter.get(
        FROM reviews r
        JOIN users u ON u.id = r.user_id
        JOIN events e ON e.id = r.event_id
-       WHERE length(r.comment) >= 20 AND r.rating >= 4
+       WHERE length(r.comment) >= 20
        ORDER BY r.created_at DESC LIMIT $1`,
       [limit]
     );

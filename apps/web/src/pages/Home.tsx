@@ -6,7 +6,7 @@ import { EventCard, EventRow, catVars } from "../components/EventRow";
 import { EventCover } from "../components/EventCover";
 import { Icon } from "../components/Icon";
 import { Stars } from "../components/Stars";
-import { Empty, SectionHead } from "../components/ui";
+import { Empty, ErrorBox, SectionHead } from "../components/ui";
 import { VibePicker } from "../components/VibePicker";
 import { useUserLocation } from "../context/LocationContext";
 import { useAuth } from "../context/AuthContext";
@@ -50,7 +50,8 @@ export default function Home() {
   const derived = useMemo(() => {
     const active = events.filter((e) => e.status !== "ended");
     const tonight = active.filter((e) => e.status === "live" || ["الليلة", "اليوم"].includes(whenLabel(e)));
-    const popular = [...active].sort((a, b) => b.popularity - a.popularity).slice(0, 4);
+    const todayIds=new Set(tonight.slice(0,5).map(e=>e.id));
+    const popular = [...active].filter(e=>!todayIds.has(e.id)).sort((a, b) => b.popularity - a.popularity).slice(0, 4);
     const newest = [...active].sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt)).slice(0, 4);
     const nearest = loc.coords ? [...active].filter((e) => e.distanceKm !== null).sort((a, b) => (a.distanceKm ?? 0) - (b.distanceKm ?? 0)).slice(0, 4) : [];
     const counts = new Map<string, number>();
@@ -94,11 +95,11 @@ export default function Home() {
 
       <section className="section container lineup">
         <SectionHead
-          title={derived.tonight.length ? "الليلة في المدينة" : "الأقرب موعدًا"}
-          sub={derived.tonight.length ? "فعاليات جارية الحين أو تبدأ اليوم" : "ما فيه فعاليات اليوم، هذي أقرب اللي جاية"}
+          title={catalogue.isLoading ? "نحمّل فعاليات المدينة" : derived.tonight.length ? "الليلة في المدينة" : "الأقرب موعدًا"}
+          sub={catalogue.isLoading || catalogue.isError ? undefined : derived.tonight.length ? "فعاليات اليوم والبرامج المستمرة — راجع ساعات الزيارة" : "هذي أقرب الفعاليات القادمة"}
           action={{ to: "/events?when=tonight", label: "كل فعاليات اليوم" }}
         />
-        {catalogue.isLoading ? <div className="rows rows-lineup"><i className="skel lineup-skel" /><i className="skel lineup-skel" /><i className="skel lineup-skel" /></div>
+        {catalogue.isError ? <ErrorBox onRetry={() => catalogue.refetch()} /> : catalogue.isLoading ? <div className="rows rows-lineup"><i className="skel lineup-skel" /><i className="skel lineup-skel" /><i className="skel lineup-skel" /></div>
           : tonightList.length === 0 ? <Empty icon="calendar" title="ما فيه فعاليات قادمة حاليًا" />
           : <div className="rows rows-lineup">{tonightList.map((e) => <EventRow key={e.id} event={e} />)}</div>}
       </section>
@@ -114,7 +115,7 @@ export default function Home() {
             <Icon name="navigation" size={26} />
             <div>
               <h3>وين أنت الحين؟</h3>
-              <p>نستخدم موقعك فقط لحساب المسافة، ويبقى في متصفحك.</p>
+              <p>الاختيار محفوظ في متصفحك خلال الجلسة، ونرسل إحداثيات تقريبية للخدمة لحساب المسافة بخط مستقيم.</p>
             </div>
             <button type="button" className="btn btn-primary" onClick={loc.requestGps} disabled={loc.status === "asking"}>{loc.status === "asking" ? "نحدد موقعك…" : "استخدم موقعي"}</button>
             <div className="locate-districts">
@@ -162,7 +163,7 @@ export default function Home() {
             return (
               <Link key={c} to={`/events?category=${encodeURIComponent(c)}`} className="cat-tile" style={catVars(c)}>
                 <EventCover event={{ image: null, category: c, title: c }} />
-                <span className="cat-tile-label"><strong>{c}</strong><span className="num">{derived.counts.get(c) ?? 0} قادمة</span></span>
+                <span className="cat-tile-label"><strong>{c}</strong><span className="num">{catalogue.isLoading || catalogue.isError ? "—" : `${derived.counts.get(c) ?? 0} قادمة`}</span></span>
               </Link>
             );
           })}
@@ -179,7 +180,7 @@ export default function Home() {
                 <blockquote>«{r.comment}»</blockquote>
                 <figcaption>
                   <b>{r.authorName}</b>
-                  {r.verified && <span className="verified"><Icon name="check" size={13} />حضر الفعالية</span>}
+                  {r.verified && <span className="verified"><Icon name="check" size={13} />حجز موثّق</span>}
                   <Link to={`/events/${r.eventSlug}`}>{r.eventTitle}</Link>
                 </figcaption>
               </figure>

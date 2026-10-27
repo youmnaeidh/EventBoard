@@ -1,7 +1,7 @@
 import { lazy, Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { EventRow, EventRowSkeleton } from "../components/EventRow";
+import { EventCard, EventRow, EventRowSkeleton } from "../components/EventRow";
 import { Icon } from "../components/Icon";
 import { SmartSearch } from "../components/SmartSearch";
 import { Empty, ErrorBox } from "../components/ui";
@@ -33,6 +33,7 @@ export default function Events() {
   const [sp, setSp] = useSearchParams();
   const loc = useUserLocation();
   const [visible, setVisible] = useState(PAGE);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
 
   const q = sp.get("q")?.trim() ?? "";
   const category = sp.get("category") ?? "";
@@ -40,7 +41,7 @@ export default function Events() {
   const price = sp.get("price") ?? "";
   const when = sp.get("when") === "tonight" ? "today" : sp.get("when") ?? "";
   const sort = sp.get("sort") ?? "soonest";
-  const view = sp.get("view") === "map" ? "map" : "list";
+  const view = sp.get("view") === "map" ? "map" : sp.get("view") === "cards" ? "cards" : "list";
   const booking = sp.get("booking") ?? "";
 
   useDocTitle(q ? `نتائج «${q}»` : "الفعاليات");
@@ -130,6 +131,7 @@ export default function Events() {
         </div>
         <div className="view-toggle" role="group" aria-label="طريقة العرض">
           <button type="button" className={view === "list" ? "is-on" : ""} aria-pressed={view === "list"} onClick={() => set({ view: "" })}><Icon name="list" size={17} />قائمة</button>
+          <button type="button" className={view === "cards" ? "is-on" : ""} aria-pressed={view === "cards"} onClick={() => set({ view: "cards" })}>بطاقات</button>
           <button type="button" className={view === "map" ? "is-on" : ""} aria-pressed={view === "map"} onClick={() => set({ view: "map" })}><Icon name="map" size={17} />خريطة</button>
         </div>
       </div>
@@ -146,7 +148,9 @@ export default function Events() {
       {active.isError ? (
         <ErrorBox onRetry={() => active.refetch()} />
       ) : view === "map" ? (
-        <Suspense fallback={<div className="map skel" />}><MapView events={items.map((i) => i.event)} user={coords} /></Suspense>
+        <div className="map-layout"><Suspense fallback={<div className="map skel" />}><MapView events={items.map((i) => i.event)} user={coords} selectedId={selectedId} onSelect={setSelectedId} /></Suspense>
+          <div className="map-event-list" aria-label="فعاليات الخريطة">{items.map(({event})=><button key={event.id} type="button" aria-pressed={selectedId===event.id} className={selectedId===event.id?'is-on':''} onClick={()=>setSelectedId(event.id)}>{event.title}<small>{event.venue}</small></button>)}</div>
+        </div>
       ) : active.isLoading ? (
         <div className="rows"><EventRowSkeleton /><EventRowSkeleton /><EventRowSkeleton /></div>
       ) : items.length === 0 ? (
@@ -156,8 +160,8 @@ export default function Events() {
         </Empty>
       ) : (
         <>
-          <div className="rows">
-            {shown.map((i) => <EventRow key={i.event.id} event={i.event} reasons={i.reasons} source={q ? "search" : "list"} />)}
+          <div className={view === "cards" ? "event-card-grid" : "rows"}>
+            {shown.map((i) => view === "cards" ? <EventCard key={i.event.id} event={i.event} reasons={i.reasons} source={q ? "search" : "list"} /> : <EventRow key={i.event.id} event={i.event} reasons={i.reasons} source={q ? "search" : "list"} />)}
           </div>
           {items.length > shown.length && (
             <div className="more-wrap"><button type="button" className="btn btn-soft" onClick={() => setVisible((v) => v + PAGE)}>عرض المزيد ({items.length - shown.length})</button></div>

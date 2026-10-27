@@ -13,6 +13,7 @@ import {
   type SeedEvent
 } from "./data.js";
 import { riyadhMidnight } from "../services/time.js";
+import { sampleMedia } from './media.js';
 
 export const DEMO_PASSWORD = "Demo#2026";
 export const DEMO_ATTENDEE_EMAIL = "demo@eventboard.demo";
@@ -165,7 +166,7 @@ export async function seedDatabase(options: { reset?: boolean; log?: (m: string)
       const endsAt = new Date(startsAt.getTime() + e.durationHours * HOUR);
       const createdAt = new Date(now.getTime() - e.createdDaysAgo * DAY);
       const d = districts[e.district]!;
-      const jitter = () => (R.rnd() - 0.5) * 0.006;
+      const media = sampleMedia[e.slug];
       const id = (
         await client.query(
           `INSERT INTO events (slug, title, summary, description, category, event_type, image_url, venue, district,
@@ -174,12 +175,18 @@ export async function seedDatabase(options: { reset?: boolean; log?: (m: string)
            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,true,$22)
            RETURNING id`,
           [
-            e.slug, e.title, e.summary, e.description, e.category, e.eventType, e.image ?? null, e.venue, e.district,
-            d.lat + jitter(), d.lng + jitter(), startsAt, endsAt, e.price, e.capacity !== undefined, e.capacity ?? null,
+            e.slug, e.slug === 'madinah-5k-run' ? 'سباق المدينة ٥ كم' : e.title, e.summary, e.description, e.category, e.eventType, media?.image ?? e.image ?? null, e.venue, e.district,
+            d.lat, d.lng, startsAt, endsAt, e.price, e.capacity !== undefined, e.capacity ?? null,
             e.audience, e.highlights, organizerIds.get(e.organizer) ?? null, e.organizer, e.featured ?? false, createdAt
           ]
         )
       ).rows[0].id as number;
+      const details = { locationAccuracy: 'illustrative', ...media?.details } as Record<string, unknown>;
+      if (e.durationHours > 24 && e.slug !== 'taibah-student-hackathon') {
+        details.dailyStart = new Date(startsAt.getTime() + 3 * HOUR).toISOString().slice(11,16);
+        details.dailyEnd = new Date(endsAt.getTime() + 3 * HOUR).toISOString().slice(11,16);
+      }
+      await client.query('UPDATE events SET details=$2 WHERE id=$1', [id, JSON.stringify(details)]);
       events.push({ id, seed: e, startsAt, endsAt, createdAt });
     }
 
@@ -303,6 +310,7 @@ export async function seedDatabase(options: { reset?: boolean; log?: (m: string)
         `INSERT INTO bookings (event_id, user_id, seats, ticket_code, created_at) VALUES ($1,$2,$3,$4,$5)`,
         [b.eventId, b.userId, b.seats, b.code, b.at]
       );
+      await client.query('UPDATE bookings SET unit_price_sar=(SELECT price_sar FROM events WHERE id=$1) WHERE ticket_code=$2', [b.eventId,b.code]);
     }
     for (const f of favorites) {
       await client.query(
@@ -329,7 +337,7 @@ export async function seedDatabase(options: { reset?: boolean; log?: (m: string)
           part.map((x) => x.sessionId),
           part.map((x) => x.eventId),
           part.map((x) => x.type),
-          part.map((x) => JSON.stringify(x.meta)),
+          part.map((x) => JSON.stringify(x.type === 'view' ? { ...x.meta, source: ['home','search','list','map','recommendation','shared'][Math.floor(R.rnd()*6)], synthetic: true } : x.meta)),
           part.map(() => true),
           part.map((x) => x.at)
         ]

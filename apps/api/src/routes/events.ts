@@ -153,7 +153,7 @@ eventsRouter.put(
   requireAuth,
   handler(async (req, res) => {
     const id = z.coerce.number().int().positive().parse(req.params.id);
-    const exists = await one("SELECT 1 FROM events WHERE id = $1", [id]);
+    const exists = await one("SELECT 1 FROM events WHERE id = $1 AND publication_status = 'published'", [id]);
     if (!exists) throw notFound("هذي الفعالية غير موجودة");
     const inserted = await query(
       "INSERT INTO favorites (user_id, event_id) VALUES ($1,$2) ON CONFLICT DO NOTHING RETURNING event_id",
@@ -206,8 +206,10 @@ eventsRouter.post(
         requires_booking: boolean;
         ends_at: Date;
         organizer_id: string | null;
-      }>("SELECT capacity, requires_booking, ends_at, organizer_id FROM events WHERE id = $1 FOR UPDATE", [id], client);
+        price_sar: number; publication_status: string;
+      }>("SELECT capacity, requires_booking, ends_at, organizer_id, price_sar, publication_status FROM events WHERE id = $1 FOR UPDATE", [id], client);
       if (!event) throw notFound("هذي الفعالية غير موجودة");
+      if (event.publication_status !== 'published') throw notFound('هذي الفعالية غير منشورة');
       if (!event.requires_booking || event.capacity === null) throw badRequest("هذي الفعالية ما تحتاج حجز");
       if (event.ends_at.getTime() < Date.now()) throw badRequest("انتهت الفعالية");
       if (event.organizer_id === user.id) throw forbidden("ما تقدر تحجز في فعاليتك");
@@ -225,9 +227,9 @@ eventsRouter.post(
       if (seats > left) throw conflict(`المتبقي ${left} مقعد فقط`, "not_enough_seats");
 
       const row = await one(
-        `INSERT INTO bookings (event_id, user_id, seats, ticket_code) VALUES ($1,$2,$3,$4)
+        `INSERT INTO bookings (event_id, user_id, seats, ticket_code, unit_price_sar) VALUES ($1,$2,$3,$4,$5)
          RETURNING id, event_id AS "eventId", seats, ticket_code AS "ticketCode", status, created_at AS "createdAt"`,
-        [id, user.id, seats, ticketCode()],
+        [id, user.id, seats, ticketCode(), event.price_sar],
         client
       );
       await client.query(

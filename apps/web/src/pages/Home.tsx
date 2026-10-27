@@ -50,7 +50,8 @@ export default function Home() {
   const derived = useMemo(() => {
     const active = events.filter((e) => e.status !== "ended");
     const tonight = active.filter((e) => e.status === "live" || ["الليلة", "اليوم"].includes(whenLabel(e)));
-    const popular = [...active].sort((a, b) => b.popularity - a.popularity).slice(0, 4);
+    const todayIds=new Set(tonight.slice(0,5).map(e=>e.id));
+    const popular = [...active].filter(e=>!todayIds.has(e.id)).sort((a, b) => b.popularity - a.popularity).slice(0, 4);
     const newest = [...active].sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt)).slice(0, 4);
     const nearest = loc.coords ? [...active].filter((e) => e.distanceKm !== null).sort((a, b) => (a.distanceKm ?? 0) - (b.distanceKm ?? 0)).slice(0, 4) : [];
     const counts = new Map<string, number>();

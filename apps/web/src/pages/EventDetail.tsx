@@ -15,6 +15,8 @@ import { api, ApiError } from "../lib/api";
 import { dateRange, dayNumber, distanceLabel, monthName, priceLabel, seatsLabel, weekdayName, whenLabel } from "../lib/format";
 import { trackShare, trackView } from "../lib/track";
 import { useDocTitle } from "../lib/useDocTitle";
+import { downloadCalendar } from '../lib/calendar';
+import {useEventMetadata} from '../lib/useEventMetadata';
 import type { EventDetailResponse, EventItem, Review } from "../types";
 
 function BookingPanel({ event, myBooking }: { event: EventItem; myBooking: EventDetailResponse["myBooking"] }) {
@@ -201,6 +203,7 @@ export default function EventDetail() {
     queryFn: () => api.get<EventDetailResponse>(`/events/${slug}`, { lat: coords?.lat, lng: coords?.lng })
   });
   const event = q.data?.event;
+  useEventMetadata(event);
   useDocTitle(event?.title);
 
   useEffect(() => {
@@ -246,10 +249,12 @@ export default function EventDetail() {
               {event.status === "upcoming" && ["الليلة", "اليوم"].includes(whenLabel(event)) && <span className="badge badge-tonight">{whenLabel(event)}</span>}
             </div>
             <h1 className="detail-title">{event.title}</h1>
+            {event.publicationStatus === 'draft' && <p className="notice">مسودة — هذه المعاينة خاصة بالمنظّم، ولن تظهر للزوار.</p>}
             <p className="detail-summary">{event.summary}</p>
             <div className="detail-actions">
               <FavButton eventId={event.id} initial={event.isFavorite} label />
               <button type="button" className="fav fav-labeled" onClick={share}><Icon name="share" size={20} /><span>مشاركة</span></button>
+              <button type="button" className="fav fav-labeled" onClick={() => downloadCalendar(event)}><Icon name="calendar" size={20} /><span>أضف للتقويم</span></button>
             </div>
           </div>
           <div className="detail-poster">
@@ -262,7 +267,11 @@ export default function EventDetail() {
       <div className="container detail-grid">
         <div className="detail-main">
           <dl className="facts">
+            {event.details?.imageCredit && <div><dt>الصورة</dt><dd>{event.details.imageIllustrative && <b>صورة توضيحية — </b>}{event.details.imageCaption}<br /><a href={event.details.imageSource} target="_blank" rel="noopener noreferrer">{event.details.imageCredit}</a> · {event.details.imageLicense}</dd></div>}
             <div><dt><Icon name="calendar" size={18} />الموعد</dt><dd>{dateRange(event)}</dd></div>
+            {event.details?.dailyStart && <div><dt>ساعات الزيارة يوميًا</dt><dd dir="ltr">{event.details.dailyStart} – {event.details.dailyEnd} (UTC+03)</dd></div>}
+            {event.status === 'live' && <div><dt>الحالة الآن</dt><dd>{event.openNow === true ? 'مفتوحة حسب الساعات المعلنة' : event.openNow === false ? 'مغلقة الآن، راجع ساعات الزيارة' : 'برنامج مستمر؛ ساعات الزيارة غير محددة'}</dd></div>}
+            {event.details?.locationAccuracy !== 'exact' && <div><dt>دقة الموقع</dt><dd>{event.details?.locationAccuracy === 'illustrative' ? 'موقع تجريبي توضيحي، وليس عنوان دخول فعلي' : 'موقع تقريبي؛ تأكد من العنوان مع المنظّم'}{dist && ' · المسافة خط مستقيم وليست مسافة قيادة'}</dd></div>}
             <div><dt><Icon name="pin" size={18} />المكان</dt><dd>{event.venue} · {event.district}{dist ? <> · <b className="num">{dist}</b> منك</> : null}<br /><a href={`https://www.google.com/maps?q=${event.lat},${event.lng}`} target="_blank" rel="noopener noreferrer">افتح في الخرائط <Icon name="external" size={14} /></a></dd></div>
             <div><dt><Icon name="users" size={18} />الفئة المستهدفة</dt><dd>{event.audience}</dd></div>
             <div><dt><Icon name="tag" size={18} />الحضور</dt><dd>{event.format}</dd></div>
@@ -270,18 +279,20 @@ export default function EventDetail() {
           </dl>
 
           <section className="about">
+            {event.details?.posterUrl && <p><a className="btn btn-soft" href={event.details.posterUrl} target="_blank" rel="noopener noreferrer">افتح الملصق كاملًا</a></p>}
             <h2>عن الفعالية</h2>
             <p>{event.description}</p>
             {event.highlights.length > 0 && (
               <ul className="highlights">{event.highlights.map((h) => <li key={h}><Icon name="check" size={17} />{h}</li>)}</ul>
             )}
           </section>
+          <section className="about"><h2>قبل ما تروح</h2><dl className="facts">{([['included','السعر يشمل'],['parking','المواقف'],['accessibility','سهولة الوصول'],['preparation','التجهيزات المطلوبة'],['cancellation','سياسة الإلغاء']] as const).map(([key,label]) => <div key={key}><dt>{label}</dt><dd>{event.details?.[key] || 'غير محدد — استفسر من المنظّم'}</dd></div>)}</dl></section>
 
           <ReviewsSection event={event} detail={q.data} />
         </div>
-        <div className="detail-side"><BookingPanel event={event} myBooking={q.data.myBooking} /></div>
+        <div className="detail-side">{event.publicationStatus==='draft'?<p className="notice">الحجز متاح بعد نشر الفعالية.</p>:<BookingPanel event={event} myBooking={q.data.myBooking} />}</div>
       </div>
-      {event.requiresBooking && event.status !== "ended" && !q.data.myBooking && event.seatsLeft !== 0 && (
+      {event.publicationStatus!=='draft' && event.requiresBooking && event.status !== "ended" && !q.data.myBooking && event.seatsLeft !== 0 && (
         <div className="mobile-cta">
           <span><small>{event.isFree ? "الدخول" : "التذكرة"}</small><b>{priceLabel(event.price)}</b></span>
           <a href="#booking" className="btn btn-primary" onClick={(e) => {

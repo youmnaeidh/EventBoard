@@ -14,11 +14,13 @@ function hash(text: string): number {
  * Six compositions (arches, sun, bands, arcs, minarets, quarter-tiles), picked deterministically
  * from the title and coloured from the category palette, so every imageless event still reads as a poster.
  */
-export function EventCover({ event, eager = false }: { event: Pick<EventItem, "image" | "category" | "title">; eager?: boolean }) {
+export function EventCover({ event, eager = false }: { event: Pick<EventItem, "image" | "category" | "title" | "details">; eager?: boolean }) {
   const [failed, setFailed] = useState(false);
   useEffect(() => setFailed(false), [event.image]);
   if (event.image && !failed) {
-    return <img className="cover-img" src={assetUrl(event.image)} alt="" width={1200} height={800} loading={eager ? "eager" : "lazy"} decoding="async" onError={() => setFailed(true)} />;
+    const cdn = event.image.startsWith('https://images.unsplash.com/');
+    const sized = (width: number) => { const u = new URL(event.image!); u.searchParams.set('w', String(width)); return u.href; };
+    return <img className="cover-img" src={assetUrl(event.image)} srcSet={cdn ? `${sized(480)} 480w, ${sized(800)} 800w, ${sized(1200)} 1200w` : undefined} sizes={eager ? '(max-width: 700px) 100vw, 480px' : '(max-width: 700px) 50vw, 320px'} style={{ objectPosition: `50% ${event.details?.imagePosition ?? 50}%` }} alt="" width={1200} height={800} loading={eager ? "eager" : "lazy"} decoding="async" onError={() => setFailed(true)} />;
   }
   const { bg, a, b, dark } = categoryStyle(event.category).poster;
   const ink = dark ? "#fff7ec" : "#25122f";

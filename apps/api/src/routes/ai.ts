@@ -117,7 +117,8 @@ aiRouter.get(
       userId: req.user?.id ?? null,
       sessionId: params.sessionId ?? `anon-${randomUUID()}`,
       type: "search",
-      meta: { q: params.q.slice(0, 120), category: params.category ?? null, results: results.length }
+      meta: { q: params.q.slice(0, 120), category: params.category ?? null, results: results.length,
+        engine: ai ? 'ai' : 'fallback', constrainedInventory: candidates.length, period:constraints.when ?? null }
     });
 
     res.json({ ...payload, results });

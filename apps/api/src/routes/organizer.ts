@@ -12,6 +12,7 @@ import {
   type ForecastResponse
 } from "../services/aiClient.js";
 import { getEventByRef, listEvents } from "../services/events.js";
+import { riyadhMidnight } from "../services/time.js";
 
 export const organizerRouter = Router();
 organizerRouter.use(requireOrganizer);
@@ -28,6 +29,23 @@ const eventSchema = z
     eventType: z.string().trim().min(2).max(30),
     venue: z.string().trim().min(2).max(120),
     district: z.string().refine((d) => d in districts, "حي غير معروف"),
+    lat: z.number().min(-90).max(90).optional(),
+    lng: z.number().min(-180).max(180).optional(),
+    publicationStatus: z.enum(["draft", "published"]).default("published"),
+    details: z.object({
+      posterUrl: z.string().url().startsWith('https://').max(500).optional(),
+      imageCredit: z.string().trim().max(180).optional(),
+      imageSource: z.string().url().startsWith('https://').max(500).optional(),
+      imageLicense: z.string().trim().max(120).optional(),
+      imageCaption: z.string().trim().max(300).optional(),
+      imageIllustrative: z.boolean().optional(), imagePosition: z.number().min(0).max(100).optional(),
+      locationAccuracy: z.enum(['exact', 'approximate', 'illustrative']).optional(),
+      dailyStart: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).optional(),
+      dailyEnd: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).optional(),
+      included: z.string().trim().max(500).optional(), parking: z.string().trim().max(300).optional(),
+      accessibility: z.string().trim().max(300).optional(), preparation: z.string().trim().max(300).optional(),
+      cancellation: z.string().trim().max(500).optional()
+    }).default({}),
     startsAt: isoDate,
     endsAt: isoDate,
     price: z.coerce.number().min(0).max(5000).default(0),
@@ -36,14 +54,17 @@ const eventSchema = z
     highlights: z.array(z.string().trim().min(2).max(80)).max(6).default([]),
     imageUrl: z
       .string()
+      .url()
       .max(500)
-      .refine((u) => /^https:\/\/[^\s]+$/.test(u) || /^\/assets\/events\/[a-zA-Z0-9_-]+\.(?:webp|jpg|jpeg|png)$/.test(u), "استخدم رابط https أو صورة من مكتبة الفعاليات")
+      .refine((u) => u.startsWith("https://"), "رابط الصورة لازم يكون https")
       .nullable()
       .optional()
   })
+  .refine((v) => (v.lat === undefined) === (v.lng === undefined), { message: 'أدخل خط العرض والطول معًا', path: ['lat'] })
+  .refine((v) => Boolean(v.details.dailyStart) === Boolean(v.details.dailyEnd), { message: 'حدد بداية ونهاية ساعات الزيارة معًا', path: ['details.dailyEnd'] })
   .refine((v) => new Date(v.endsAt) > new Date(v.startsAt), { message: "وقت النهاية لازم يكون بعد البداية", path: ["endsAt"] })
-  .refine((v) => new Date(v.endsAt).getTime() - new Date(v.startsAt).getTime() <= 14 * DAY, {
-    message: "مدة الفعالية الأقصى 14 يوم",
+  .refine((v) => new Date(v.endsAt).getTime() - new Date(v.startsAt).getTime() <= 30 * DAY, {
+    message: "مدة الفعالية الأقصى 30 يوم",
     path: ["endsAt"]
   });
 
@@ -66,7 +87,7 @@ organizerRouter.get(
          (SELECT COUNT(*)::int FROM favorites f WHERE f.event_id = e.id) AS favorites,
          (SELECT COUNT(*)::int FROM bookings b WHERE b.event_id = e.id AND b.status = 'confirmed') AS bookings,
          (SELECT COALESCE(SUM(b.seats),0)::int FROM bookings b WHERE b.event_id = e.id AND b.status = 'confirmed') AS seats,
-         (SELECT COALESCE(SUM(b.seats),0) * e.price_sar FROM bookings b WHERE b.event_id = e.id AND b.status = 'confirmed') AS revenue
+         (SELECT COALESCE(SUM(b.seats * b.unit_price_sar),0) FROM bookings b WHERE b.event_id = e.id AND b.status = 'confirmed') AS revenue
        FROM events e WHERE e.organizer_id = $1`,
       [userId]
     );
@@ -109,14 +130,16 @@ organizerRouter.post(
         body.audience, body.highlights, req.user!.id, req.user!.name
       ]
     );
-    const event = await getEventByRef(String(row!.id), { userId: req.user!.id });
-    res.status(201).json({ event });
+    await query('UPDATE events SET details=$2, publication_status=$3, lat=$4, lng=$5 WHERE id=$1',
+      [row!.id, JSON.stringify({ ...body.details, locationAccuracy: body.lat === undefined ? 'approximate' : (body.details.locationAccuracy ?? 'exact') }),
+        body.publicationStatus, body.lat ?? d.lat, body.lng ?? d.lng]);
+    res.status(201).json({ event: await getEventByRef(String(row!.id), { userId: req.user!.id }) });
   })
 );
 
 async function ownedEvent(eventId: number, userId: string) {
-  const row = await one<{ organizer_id: string | null; ends_at: Date }>(
-    "SELECT organizer_id, ends_at FROM events WHERE id = $1",
+  const row = await one<{ organizer_id: string | null; ends_at: Date; lat: number; lng: number; district: string }>(
+    "SELECT organizer_id, ends_at, lat, lng, district FROM events WHERE id = $1",
     [eventId]
   );
   if (!row) throw notFound("هذي الفعالية غير موجودة");
@@ -150,10 +173,13 @@ organizerRouter.put(
          audience=$17, highlights=$18 WHERE id = $1`,
       [
         id, body.title, body.summary, body.description, body.category, body.eventType, body.imageUrl ?? null, body.venue,
-        body.district, d.lat, d.lng, body.startsAt, body.endsAt, body.price, capacity !== null, capacity, body.audience,
+        body.district, body.lat ?? (owned.district === body.district ? owned.lat : d.lat), body.lng ?? (owned.district === body.district ? owned.lng : d.lng), body.startsAt, body.endsAt, body.price, capacity !== null, capacity, body.audience,
         body.highlights
       ]
     );
+    const details = { ...body.details };
+    if (body.lat === undefined && owned.district !== body.district) details.locationAccuracy = 'approximate';
+    await query('UPDATE events SET details=details || $2::jsonb, publication_status=$3 WHERE id=$1', [id, JSON.stringify(details), body.publicationStatus]);
     const event = await getEventByRef(String(id), { userId: req.user!.id });
     res.json({ event });
   })
@@ -177,63 +203,48 @@ organizerRouter.get(
   "/events/:id/analytics",
   handler(async (req, res) => {
     const id = z.coerce.number().int().positive().parse(req.params.id);
+    const days = z.coerce.number().refine(n=>[7,14,30].includes(n)).parse(req.query.days ?? 14);
     await ownedEvent(id, req.user!.id);
-    const event = await getEventByRef(String(id), { userId: req.user!.id });
-
-    const [funnel] = await query<{
-      views: number; visitors: number; favorites: number; shares: number; bookings: number; seats: number;
-    }>(
-      `SELECT
-         COUNT(*) FILTER (WHERE i.type = 'view')::int AS views,
-         COUNT(DISTINCT i.session_id) FILTER (WHERE i.type = 'view')::int AS visitors,
-         (SELECT COUNT(*)::int FROM favorites f WHERE f.event_id = $1) AS favorites,
-         COUNT(*) FILTER (WHERE i.type = 'share')::int AS shares,
-         (SELECT COUNT(*)::int FROM bookings b WHERE b.event_id = $1 AND b.status = 'confirmed') AS bookings,
-         (SELECT COALESCE(SUM(seats),0)::int FROM bookings b WHERE b.event_id = $1 AND b.status = 'confirmed') AS seats
-       FROM interactions i WHERE i.event_id = $1`,
-      [id]
-    );
-
-    const daily = await query<{ day: string; views: number; favorites: number; bookings: number }>(
-      `WITH days AS (
-         SELECT generate_series(
-           (date_trunc('day', now() AT TIME ZONE 'Asia/Riyadh') - interval '20 days')::date,
-           (date_trunc('day', now() AT TIME ZONE 'Asia/Riyadh'))::date, interval '1 day')::date AS day
-       )
-       SELECT to_char(d.day, 'YYYY-MM-DD') AS day,
-         COUNT(*) FILTER (WHERE i.type = 'view')::int AS views,
-         COUNT(*) FILTER (WHERE i.type = 'favorite')::int AS favorites,
-         COUNT(*) FILTER (WHERE i.type = 'book')::int AS bookings
-       FROM days d
-       LEFT JOIN interactions i ON i.event_id = $1 AND (i.created_at AT TIME ZONE 'Asia/Riyadh')::date = d.day
-       GROUP BY d.day ORDER BY d.day`,
-      [id]
-    );
-
-    const ratings = await query<{ rating: number; count: number }>(
-      "SELECT rating::int AS rating, COUNT(*)::int AS count FROM reviews WHERE event_id = $1 GROUP BY rating ORDER BY rating",
-      [id]
-    );
-
-    const sources = await query<{ source: string; count: number }>(
-      `SELECT COALESCE(meta->>'source', 'unknown') AS source, COUNT(*)::int AS count
-       FROM interactions WHERE event_id = $1 AND type = 'view' GROUP BY 1 ORDER BY 2 DESC`,
-      [id]
-    );
-
-    const revenue = (funnel?.seats ?? 0) * (event?.price ?? 0);
+    const event = await getEventByRef(String(id), {userId:req.user!.id});
+    const today = riyadhMidnight(new Date());
+    const to = new Date(today.getTime()+DAY), from = new Date(to.getTime()-days*DAY);
+    const previousFrom = new Date(from.getTime()-days*DAY);
+    const metrics = async (a:Date,b:Date) => (await one<{
+      views:number;visitors:number;favorites:number;shares:number;bookings:number;seats:number;
+      cancelled:number;revenue:number;unpriced:number;
+    }>(`SELECT
+      (SELECT COUNT(*)::int FROM interactions WHERE event_id=$1 AND type='view' AND created_at >= $2 AND created_at < $3) AS views,
+      (SELECT COUNT(DISTINCT session_id)::int FROM interactions WHERE event_id=$1 AND type='view' AND created_at >= $2 AND created_at < $3) AS visitors,
+      (SELECT COUNT(*)::int FROM favorites WHERE event_id=$1 AND created_at >= $2 AND created_at < $3) AS favorites,
+      (SELECT COUNT(*)::int FROM interactions WHERE event_id=$1 AND type='share' AND created_at >= $2 AND created_at < $3) AS shares,
+      COUNT(*) FILTER(WHERE status='confirmed')::int AS bookings,
+      COALESCE(SUM(seats) FILTER(WHERE status='confirmed'),0)::int AS seats,
+      COUNT(*) FILTER(WHERE status='cancelled')::int AS cancelled,
+      COALESCE(SUM(seats*unit_price_sar) FILTER(WHERE status='confirmed'),0)::float8 AS revenue,
+      COUNT(*) FILTER(WHERE status='confirmed' AND unit_price_sar IS NULL)::int AS unpriced
+      FROM bookings WHERE event_id=$1 AND created_at >= $2 AND created_at < $3`,[id,a,b]))!;
+    const [current,previous,daily,ratings,sources] = await Promise.all([
+      metrics(from,to), metrics(previousFrom,from),
+      query(`WITH days AS (SELECT generate_series(($2::timestamptz AT TIME ZONE 'Asia/Riyadh')::date,
+          ($3::timestamptz AT TIME ZONE 'Asia/Riyadh')::date-1,interval '1 day')::date AS day)
+        SELECT to_char(d.day,'YYYY-MM-DD') AS day,
+          (SELECT COUNT(*)::int FROM interactions i WHERE event_id=$1 AND type='view' AND (created_at AT TIME ZONE 'Asia/Riyadh')::date=d.day) AS views,
+          (SELECT COUNT(*)::int FROM favorites f WHERE event_id=$1 AND (created_at AT TIME ZONE 'Asia/Riyadh')::date=d.day) AS favorites,
+          (SELECT COUNT(*)::int FROM bookings b WHERE event_id=$1 AND status='confirmed' AND (created_at AT TIME ZONE 'Asia/Riyadh')::date=d.day) AS bookings
+        FROM days d ORDER BY d.day`,[id,from,to]),
+      query('SELECT rating::int, COUNT(*)::int AS count FROM reviews WHERE event_id=$1 AND created_at >= $2 AND created_at < $3 GROUP BY rating ORDER BY rating',[id,from,to]),
+      query(`SELECT COALESCE(meta->>'source','unknown') AS source, COUNT(*)::int AS count,
+          COUNT(*) FILTER(WHERE is_sample)::int AS synthetic
+        FROM interactions WHERE event_id=$1 AND type='view' AND created_at >= $2 AND created_at < $3 GROUP BY 1 ORDER BY 2 DESC`,[id,from,to])
+    ]);
     res.json({
-      event,
-      funnel: funnel ?? { views: 0, visitors: 0, favorites: 0, shares: 0, bookings: 0, seats: 0 },
-      rates: {
-        favoriteRate: funnel && funnel.views ? Math.round((funnel.favorites / funnel.views) * 1000) / 10 : 0,
-        bookingRate: funnel && funnel.views ? Math.round((funnel.bookings / funnel.views) * 1000) / 10 : 0,
-        fillRate: event?.capacity ? Math.round(((funnel?.seats ?? 0) / event.capacity) * 100) : null
-      },
-      revenue,
-      daily,
-      ratings,
-      sources
+      event, period:{days,from:from.toISOString(),to:to.toISOString(),previousFrom:previousFrom.toISOString(),timezone:'Asia/Riyadh'},
+      funnel:current, previous, revenue:current.revenue, unpricedBookings:current.unpriced, cancelled:current.cancelled,
+      rates:{
+        favoriteRate:current.views?Math.round(current.favorites/current.views*1000)/10:0,
+        bookingRate:current.views?Math.round(current.bookings/current.views*1000)/10:0,
+        fillRate:event?.capacity?Math.round((event.capacity-(event.seatsLeft??event.capacity))/event.capacity*100):null
+      }, daily, ratings, sources
     });
   })
 );
@@ -244,10 +255,13 @@ organizerRouter.get(
   "/insights",
   handler(async (_req, res) => {
     const [searches, upcoming, categoryStats] = await Promise.all([
-      query<{ q: string; category: string | null; results: number; at: Date }>(
-        `SELECT meta->>'q' AS q, meta->>'category' AS category, COALESCE((meta->>'results')::int, 0) AS results, created_at AS at
-         FROM interactions WHERE type = 'search' AND meta ? 'q' AND created_at > now() - interval '28 days'
-         ORDER BY created_at DESC LIMIT 5000`
+      query<{ q: string; category: string | null; results: number; at: Date; identity:string; engine:string|null; inventory:number|null }>(
+        `SELECT DISTINCT ON (COALESCE(user_id::text, session_id), lower(trim(meta->>'q')), (created_at AT TIME ZONE 'Asia/Riyadh')::date)
+          meta->>'q' AS q, meta->>'category' AS category, COALESCE((meta->>'results')::int,0) AS results, created_at AS at,
+          COALESCE(user_id::text,session_id) AS identity, meta->>'engine' AS engine,
+          (meta->>'constrainedInventory')::int AS inventory
+         FROM interactions WHERE type='search' AND meta ? 'q' AND created_at > now()-interval '28 days'
+         ORDER BY COALESCE(user_id::text,session_id), lower(trim(meta->>'q')), (created_at AT TIME ZONE 'Asia/Riyadh')::date,created_at DESC LIMIT 5000`
       ),
       listEvents({ status: "upcoming", limit: 100 }),
       query(
@@ -262,13 +276,17 @@ organizerRouter.get(
       )
     ]);
 
+    const sample = {periodDays:28, uniqueSearchers:new Set(searches.map(s=>s.identity)).size, deduplicatedSearches:searches.length,
+      retrievalFailures:searches.filter(s=>s.results===0 && s.inventory!==null && s.inventory>0).length,
+      noInventory:searches.filter(s=>s.inventory===0).length,
+      engineUnavailable:searches.filter(s=>s.engine==='fallback').length};
     const ai = await callAi<DemandGapsResponse>("/v1/demand-gaps", {
       searches: searches.map((s) => ({ q: s.q, category: s.category, results: s.results, at: s.at.toISOString() })),
       events: upcoming.events.map(toAiEvent),
       now: new Date().toISOString()
     });
 
-    if (ai) return res.json({ mode: "ai", ...ai, categories: categoryStats });
+    if (ai) return res.json({ mode: "ai", ...ai, sample, categories: categoryStats });
 
     // Fallback: exact-query grouping, no semantic clustering and no supply estimate.
     const groups = new Map<string, { searches: number; zero: number }>();
@@ -288,7 +306,7 @@ organizerRouter.get(
       }))
       .sort((a, b) => b.searches - a.searches)
       .slice(0, 10);
-    res.json({ mode: "basic", gaps, totalSearches: searches.length, categories: categoryStats });
+    res.json({ mode: "basic", gaps, totalSearches: searches.length, sample, categories: categoryStats });
   })
 );
 
@@ -309,7 +327,7 @@ organizerRouter.post(
   "/forecast",
   handler(async (req, res) => {
     const body = forecastSchema.parse(req.body);
-    const leadDays = body.leadDays ?? Math.max(0, Math.round((new Date(body.startsAt).getTime() - Date.now()) / DAY));
+    const leadDays = body.leadDays ?? Math.max(0, Math.min(120,(new Date(body.startsAt).getTime() - Date.now()) / DAY));
     const payload: ForecastRequest = { ...body, leadDays };
     const ai = await callAi<ForecastResponse>("/v1/forecast/predict", payload);
     if (!ai) throw new HttpError(503, "ai_unavailable", "خدمة التوقع غير متاحة الحين");

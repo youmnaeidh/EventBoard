@@ -2,6 +2,7 @@ import { z } from "zod";
 import { one, query, type Queryable } from "../db.js";
 import { categories, districts } from "../seed/data.js";
 import { timeWindow } from "./time.js";
+import { isOpenNow } from "./schedule.js";
 
 export const DEFAULT_CENTER = { lat: 24.4672, lng: 39.6111, label: "المسجد النبوي" };
 
@@ -16,6 +17,9 @@ export interface EventDto {
   category: string;
   eventType: string;
   image: string | null;
+  details: Record<string, unknown>;
+  publicationStatus: "draft" | "published";
+  openNow: boolean | null;
   venue: string;
   district: string;
   lat: number;
@@ -51,6 +55,8 @@ interface EventRow {
   category: string;
   event_type: string;
   image_url: string | null;
+  details: Record<string, unknown>;
+  publication_status: "draft" | "published";
   venue: string;
   district: string;
   lat: number;
@@ -89,6 +95,9 @@ export function toEventDto(row: EventRow, now = new Date()): EventDto {
     category: row.category,
     eventType: row.event_type,
     image: row.image_url,
+    details: { locationAccuracy: 'approximate', ...row.details },
+    publicationStatus: row.publication_status,
+    openNow: isOpenNow(row.starts_at, row.ends_at, row.details ?? {}, now),
     venue: row.venue,
     district: row.district,
     lat: row.lat,
@@ -167,6 +176,10 @@ export async function listEvents(
   };
 
   const where: string[] = [];
+  // Drafts are visible only in the authenticated owner's dashboard or an explicit detail lookup.
+  if (!options.organizerId) where.push(options.ids
+    ? `(e.publication_status = 'published' OR e.organizer_id = ${add(options.userId ?? null)}::uuid)`
+    : "e.publication_status = 'published'");
   const status = options.status ?? "upcoming";
   if (status === "upcoming") where.push(`e.ends_at >= ${add(now)}::timestamptz`);
   if (status === "ended") where.push(`e.ends_at < ${add(now)}::timestamptz`);

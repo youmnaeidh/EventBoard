@@ -32,6 +32,7 @@ describe('review quality',()=>{
     const owner=await registerAgent('organizer');
     const payload=futureEventPayload({lat:24.441,lng:39.619,imageUrl:'/assets/events/book-fair.webp',details:{locationAccuracy:'exact'}});
     const made=await owner.agent.post('/api/organizer/events').send(payload);
+    expect(made.status,JSON.stringify(made.body)).toBe(201);
     const changed=await owner.agent.put('/api/organizer/events/'+made.body.event.id).send({...payload,lat:undefined,lng:undefined,title:'عنوان جديد مع نفس المكان'});
     expect(changed.status).toBe(200); expect(changed.body.event.lat).toBe(24.441);
     expect(changed.body.event.image).toBe('/assets/events/book-fair.webp');

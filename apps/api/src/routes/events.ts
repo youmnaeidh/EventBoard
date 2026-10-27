@@ -97,6 +97,7 @@ eventsRouter.get(
   "/events/:id/reviews",
   handler(async (req, res) => {
     const id = z.coerce.number().int().positive().parse(req.params.id);
+    if (!(await getEventByRef(String(id), {userId:req.user?.id}))) throw notFound('هذي الفعالية غير موجودة');
     const rows = await query(
       `SELECT r.id, r.rating::int AS rating, r.comment, r.verified, r.created_at AS "createdAt",
               split_part(u.name, ' ', 1) AS "authorName"

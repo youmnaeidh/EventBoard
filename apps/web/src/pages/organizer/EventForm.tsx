@@ -40,7 +40,7 @@ function ForecastPanel({ f, loading, error, onPick, capacity }: { f: Forecast | 
         <>
           <div className="forecast-hero">
             <b className="num">{f.expectedBookings}</b>
-            <span>حجز متوقع{f.expectedFillRate !== null && <> · امتلاء <b className="num">{Math.round(f.expectedFillRate * 100)}%</b></>}</span>
+            <span>تسجيل متوقع (مقاعد، وليس حضورًا فعليًا){f.expectedFillRate !== null && <> · امتلاء <b className="num">{Math.round(f.expectedFillRate * 100)}%</b></>}</span>
           </div>
           <IntervalBar low={f.low} expected={f.expectedBookings} high={f.high} capacity={capacity} />
           <p className="hint">النطاق المرجّح (80%) من <b className="num">{f.low}</b> إلى <b className="num">{f.high}</b>.</p>
@@ -53,7 +53,7 @@ function ForecastPanel({ f, loading, error, onPick, capacity }: { f: Forecast | 
           <ul className="slots">
             {f.slots.map((s) => (
               <li key={s.label}>
-                <span><b>{s.label}</b><small className="num">≈ {s.expectedBookings} حجز</small></span>
+                <span><b>{s.label}</b><small className="num">≈ {s.expectedBookings} تسجيل{s.startsAt && ` · ${toLocalInput(s.startsAt).replace('T',' ')}`}</small></span>
                 <button type="button" className="btn btn-soft btn-sm" onClick={() => onPick(s.weekday, s.hour,s.startsAt)}>جرّب</button>
               </li>
             ))}
@@ -121,7 +121,7 @@ export default function EventForm() {
         venue: f.venue, district: f.district, startsAt: fromLocalInput(f.startsAt), endsAt: fromLocalInput(f.endsAt),
         price: Number(f.price) || 0, capacity: f.needsBooking ? Math.round(Number(f.capacity) || 0) : null, audience: f.audience || "الجميع",
         highlights: f.highlights.split("\n").map((h) => h.trim()).filter(Boolean).slice(0, 6), imageUrl: f.imageUrl.trim() || null,
-        publicationStatus, details: Object.fromEntries(Object.entries(f.details).filter(([,v])=>v!=='')),
+        publicationStatus, details: f.details,
         ...(f.lat.trim() ? {lat:Number(f.lat)} : {}), ...(f.lng.trim() ? {lng:Number(f.lng)} : {})
       };
       return editing ? api.put<{ event: EventItem }>(`/organizer/events/${id}`, body) : api.post<{ event: EventItem }>("/organizer/events", body);
@@ -176,7 +176,7 @@ export default function EventForm() {
             <legend>المكان والموعد</legend>
             <div className="field-row">
               <label className="field"><span>اسم المكان</span><input value={f.venue} onChange={(e) => set("venue", e.target.value)} maxLength={120} required /><small className="field-error">{fieldErr("venue")}</small></label>
-              <label className="field"><span>الحي</span><select value={f.district} onChange={(e) => set("district", e.target.value)}>{meta?.districts.map((d) => <option key={d.name}>{d.name}</option>)}</select></label>
+              <label className="field"><span>الحي</span><select value={f.district} onChange={(e) => setF(s=>({...s,district:e.target.value,lat:'',lng:'',details:{...s.details,locationAccuracy:'approximate'}}))}>{meta?.districts.map((d) => <option key={d.name}>{d.name}</option>)}</select></label>
             </div>
             <div className="field-row">
               <label className="field"><span>تبدأ</span><input type="datetime-local" value={f.startsAt} onChange={(e) => set("startsAt", e.target.value)} required /><small className="field-error">{fieldErr("startsAt")}</small></label>

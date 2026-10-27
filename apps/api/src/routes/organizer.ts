@@ -33,15 +33,15 @@ const eventSchema = z
     lng: z.number().min(-180).max(180).optional(),
     publicationStatus: z.enum(["draft", "published"]).default("published"),
     details: z.object({
-      posterUrl: z.string().url().startsWith('https://').max(500).optional(),
+      posterUrl: z.string().url().startsWith('https://').max(500).or(z.literal('')).optional(),
       imageCredit: z.string().trim().max(180).optional(),
-      imageSource: z.string().url().startsWith('https://').max(500).optional(),
+      imageSource: z.string().url().startsWith('https://').max(500).or(z.literal('')).optional(),
       imageLicense: z.string().trim().max(120).optional(),
       imageCaption: z.string().trim().max(300).optional(),
       imageIllustrative: z.boolean().optional(), imagePosition: z.number().min(0).max(100).optional(),
       locationAccuracy: z.enum(['exact', 'approximate', 'illustrative']).optional(),
-      dailyStart: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).optional(),
-      dailyEnd: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).optional(),
+      dailyStart: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).or(z.literal('')).optional(),
+      dailyEnd: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).or(z.literal('')).optional(),
       included: z.string().trim().max(500).optional(), parking: z.string().trim().max(300).optional(),
       accessibility: z.string().trim().max(300).optional(), preparation: z.string().trim().max(300).optional(),
       cancellation: z.string().trim().max(500).optional()
@@ -54,9 +54,8 @@ const eventSchema = z
     highlights: z.array(z.string().trim().min(2).max(80)).max(6).default([]),
     imageUrl: z
       .string()
-      .url()
       .max(500)
-      .refine((u) => u.startsWith("https://"), "رابط الصورة لازم يكون https")
+      .refine((u) => /^https:\/\/[^\s]+$/.test(u) || /^\/assets\/events\/[a-zA-Z0-9_-]+\.(?:webp|jpg|jpeg|png)$/.test(u), "استخدم رابط https أو صورة من مكتبة الفعاليات")
       .nullable()
       .optional()
   })
@@ -179,7 +178,7 @@ organizerRouter.put(
     );
     const details = { ...body.details };
     if (body.lat === undefined && owned.district !== body.district) details.locationAccuracy = 'approximate';
-    await query('UPDATE events SET details=details || $2::jsonb, publication_status=$3 WHERE id=$1', [id, JSON.stringify(details), body.publicationStatus]);
+    await query('UPDATE events SET details=jsonb_strip_nulls(details || $2::jsonb), publication_status=$3 WHERE id=$1', [id, JSON.stringify(Object.fromEntries(Object.entries(details).map(([k,v])=>[k,v===''?null:v]))), body.publicationStatus]);
     const event = await getEventByRef(String(id), { userId: req.user!.id });
     res.json({ event });
   })
@@ -256,12 +255,12 @@ organizerRouter.get(
   handler(async (_req, res) => {
     const [searches, upcoming, categoryStats] = await Promise.all([
       query<{ q: string; category: string | null; results: number; at: Date; identity:string; engine:string|null; inventory:number|null }>(
-        `SELECT DISTINCT ON (COALESCE(user_id::text, session_id), lower(trim(meta->>'q')), (created_at AT TIME ZONE 'Asia/Riyadh')::date)
+        `SELECT * FROM (SELECT DISTINCT ON (COALESCE(user_id::text, session_id), lower(trim(meta->>'q')), (created_at AT TIME ZONE 'Asia/Riyadh')::date)
           meta->>'q' AS q, meta->>'category' AS category, COALESCE((meta->>'results')::int,0) AS results, created_at AS at,
           COALESCE(user_id::text,session_id) AS identity, meta->>'engine' AS engine,
           (meta->>'constrainedInventory')::int AS inventory
          FROM interactions WHERE type='search' AND meta ? 'q' AND created_at > now()-interval '28 days'
-         ORDER BY COALESCE(user_id::text,session_id), lower(trim(meta->>'q')), (created_at AT TIME ZONE 'Asia/Riyadh')::date,created_at DESC LIMIT 5000`
+         ORDER BY COALESCE(user_id::text,session_id), lower(trim(meta->>'q')), (created_at AT TIME ZONE 'Asia/Riyadh')::date,created_at DESC) deduplicated ORDER BY at DESC LIMIT 5000`
       ),
       listEvents({ status: "upcoming", limit: 100 }),
       query(
@@ -272,7 +271,7 @@ organizerRouter.get(
          FROM events e
          LEFT JOIN (SELECT event_id, AVG(rating) AS avg_rating FROM reviews GROUP BY event_id) r ON r.event_id = e.id
          LEFT JOIN (SELECT event_id, SUM(seats) AS seats FROM bookings WHERE status = 'confirmed' GROUP BY event_id) b ON b.event_id = e.id
-         GROUP BY e.category ORDER BY seats DESC`
+         WHERE e.publication_status='published' GROUP BY e.category ORDER BY seats DESC`
       )
     ]);
 

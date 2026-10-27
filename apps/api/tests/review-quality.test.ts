@@ -21,6 +21,8 @@ describe('review quality',()=>{
     const created=await owner.agent.post('/api/organizer/events').send(futureEventPayload({publicationStatus:'draft'}));
     expect(created.status).toBe(201);
     const e=created.body.event;
+    const edited=await owner.agent.put('/api/organizer/events/'+e.id).send(futureEventPayload({title:'مسودة معدلة تبقى خاصة'}));
+    expect(edited.body.event.publicationStatus).toBe('draft');
     expect((await request(app).get('/api/events/'+e.id)).status).toBe(404);
     expect((await stranger.agent.get('/api/events/'+e.id)).status).toBe(404);
     expect((await request(app).post('/api/track').send({type:'view',eventId:e.id,sessionId:'review-draft-session'})).status).toBe(404);

@@ -137,8 +137,8 @@ organizerRouter.post(
 );
 
 async function ownedEvent(eventId: number, userId: string) {
-  const row = await one<{ organizer_id: string | null; ends_at: Date; lat: number; lng: number; district: string }>(
-    "SELECT organizer_id, ends_at, lat, lng, district FROM events WHERE id = $1",
+  const row = await one<{ organizer_id: string | null; ends_at: Date; lat: number; lng: number; district: string; publication_status:'draft'|'published' }>(
+    "SELECT organizer_id, ends_at, lat, lng, district, publication_status FROM events WHERE id = $1",
     [eventId]
   );
   if (!row) throw notFound("هذي الفعالية غير موجودة");
@@ -178,7 +178,7 @@ organizerRouter.put(
     );
     const details = { ...body.details };
     if (body.lat === undefined && owned.district !== body.district) details.locationAccuracy = 'approximate';
-    await query('UPDATE events SET details=jsonb_strip_nulls(details || $2::jsonb), publication_status=$3 WHERE id=$1', [id, JSON.stringify(Object.fromEntries(Object.entries(details).map(([k,v])=>[k,v===''?null:v]))), body.publicationStatus]);
+    await query('UPDATE events SET details=jsonb_strip_nulls(details || $2::jsonb), publication_status=$3 WHERE id=$1', [id, JSON.stringify(Object.fromEntries(Object.entries(details).map(([k,v])=>[k,v===''?null:v]))), req.body.publicationStatus===undefined ? owned.publication_status : body.publicationStatus]);
     const event = await getEventByRef(String(id), { userId: req.user!.id });
     res.json({ event });
   })

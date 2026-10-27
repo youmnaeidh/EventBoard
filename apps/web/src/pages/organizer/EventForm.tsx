@@ -221,7 +221,7 @@ export default function EventForm() {
           </fieldset>
 
           <div className="form-actions">
-            <button type="submit" className="btn btn-primary btn-lg" disabled={save.isPending || !f.title || !f.venue}>{save.isPending ? "جاري الحفظ…" : f.publicationStatus==='draft'?'نشر المسودة':editing ? "حفظ ونشر التعديلات" : "نشر الفعالية"}</button>
+            <button type="submit" className="btn btn-primary btn-lg" disabled={save.isPending || !f.title || !f.venue}>{save.isPending ? "جاري الحفظ…" : f.publicationStatus==='draft'?'نشر المسودة':editing ? "حفظ التعديلات" : "نشر الفعالية"}</button>
             <button type="button" className="btn btn-soft" disabled={save.isPending || !f.title || !f.venue} onClick={()=>{setError(null);save.mutate('draft');}}>حفظ كمسودة</button>
             <button type="button" className="btn btn-ghost" aria-expanded={preview} onClick={()=>setPreview(!preview)}>معاينة قبل النشر</button>
             <Link to="/organizer" className="btn btn-ghost btn-lg">إلغاء</Link>

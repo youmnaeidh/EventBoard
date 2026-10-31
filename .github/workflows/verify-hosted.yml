@@ -43,14 +43,14 @@ jobs:
         if: success() && github.ref == 'refs/heads/release/eventboard-v2-pages'
         run: |
           mkdir -p docs/screenshots
-          for name in home-desktop home-mobile organizer-desktop; do
+          for name in home-desktop event-detail booking-confirmation organizer-desktop home-mobile; do
             source=$(find test-results -type f -name "$name.png" -print -quit)
             test -n "$source"
             cp "$source" "docs/screenshots/$name.png"
           done
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/screenshots/home-desktop.png docs/screenshots/home-mobile.png docs/screenshots/organizer-desktop.png
+          git add docs/screenshots/home-desktop.png docs/screenshots/event-detail.png docs/screenshots/booking-confirmation.png docs/screenshots/organizer-desktop.png docs/screenshots/home-mobile.png
           if ! git diff --cached --quiet; then
             git commit -m "docs: capture verified hosted demo screenshots [skip ci]"
             git push origin HEAD:release/eventboard-v2-pages

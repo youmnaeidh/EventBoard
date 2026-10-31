@@ -54,6 +54,8 @@ test("Pages base path loads images, video, fonts and hash deep links", async ({ 
   await page.screenshot({ path: info.outputPath("home-desktop.png"), fullPage: true });
   await page.goto("#/events/madinah-nights");
   await expect(page.locator(".detail-title")).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
+  await page.screenshot({ path: info.outputPath("event-detail.png"), fullPage: true });
   await page.reload();
   await expect(page.locator(".detail-title")).toContainText("ليالي");
   expect(failedAssets).toEqual([]);
@@ -77,7 +79,7 @@ test("bearer login persists after reload and logout clears it without cookies", 
   await expect(page.locator(".avatar-btn")).toHaveCount(0);
 });
 
-test("cross-origin registration, favourites, booking, ticket and cancellation", async ({ page }) => {
+test("cross-origin registration, favourites, booking, ticket and cancellation", async ({ page }, info) => {
   await page.goto("#/register");
   await page.getByLabel("الاسم", { exact: true }).fill("اختبار النشر");
   await page.getByLabel("البريد الإلكتروني").fill(`pages-${Date.now()}@example.test`);
@@ -105,6 +107,8 @@ test("cross-origin registration, favourites, booking, ticket and cancellation", 
   await page.getByRole("button", { name: "احجز الآن", exact: true }).click();
   await expect(page.getByText("حجزك مؤكد")).toBeVisible();
   await expect(page.locator(".ticket-code")).toHaveText(/EB-[A-Z0-9]{4}-[A-Z0-9]{4}/);
+  await page.evaluate(() => document.fonts.ready);
+  await page.screenshot({ path: info.outputPath("booking-confirmation.png"), fullPage: true });
   await page.reload();
   await expect(page.getByText("حجزك مؤكد")).toBeVisible();
   page.once("dialog", d => d.accept());

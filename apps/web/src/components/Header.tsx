@@ -53,7 +53,7 @@ export function Header() {
           <LocationPicker />
           {user ? (
             <div className="usermenu" ref={menuRef}>
-              <button type="button" className="avatar-btn" aria-expanded={menu} onClick={() => setMenu((v) => !v)}>
+              <button type="button" className="avatar-btn" aria-label="قائمة الحساب" aria-expanded={menu} onClick={() => setMenu((v) => !v)}>
                 <span className="avatar" aria-hidden="true">{user.name.trim().charAt(0)}</span>
                 <span className="avatar-name">{user.name.split(" ")[0]}</span>
               </button>

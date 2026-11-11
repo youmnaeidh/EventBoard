@@ -30,6 +30,12 @@ services:
         value: production
       - key: PUBLIC_WEB_ORIGIN
         value: https://youmnaeidh.github.io
+      - key: PUBLIC_WEB_URL
+        value: https://youmnaeidh.github.io/EventBoard/
+      - key: PUBLIC_API_URL
+        value: https://eventboard-api-orv8.onrender.com
+      - key: WEB_HASH_ROUTER
+        value: "true"
       - key: AI_SERVICE_URL
         value: ""
 

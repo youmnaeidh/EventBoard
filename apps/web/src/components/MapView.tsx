@@ -1,76 +1,62 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
 import L from "leaflet";
 import { CircleMarker, MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { categoryStyle } from "../lib/categories";
-import { dayNumber, distanceLabel, monthShort, priceLabel, timeOfDay } from "../lib/format";
+import { dayNumber, priceLabel, fullDate } from "../lib/format";
 import { trackView } from "../lib/track";
 import type { EventItem } from "../types";
 import type { Coords } from "../context/LocationContext";
 
 const CENTER: [number, number] = [24.4672, 39.6111];
-
-function pinIcon(color: string, label: string, active: boolean) {
-  return L.divIcon({
-    className: "pin-wrap",
-    html: `<span class="pin ${active ? "pin-active" : ""}" style="--pin:${color}"><b>${label}</b></span>`,
-    iconSize: [40, 48],
-    iconAnchor: [20, 46],
-    popupAnchor: [0, -42]
-  });
-}
-
-function Fit({ events, user }: { events: EventItem[]; user: Coords | null }) {
+function Fit({ events, user, selectedId }: { events: EventItem[]; user: Coords | null; selectedId?: number | null }) {
   const map = useMap();
   useEffect(() => {
-    const pts: [number, number][] = events.map((e) => [e.lat, e.lng]);
-    if (user) pts.push([user.lat, user.lng]);
-    if (pts.length === 0) {
-      map.setView(CENTER, 12);
-      return;
-    }
-    if (pts.length === 1) {
-      map.setView(pts[0]!, 14);
-      return;
-    }
-    map.fitBounds(L.latLngBounds(pts), { padding: [48, 48], maxZoom: 15 });
-  }, [events, user, map]);
+    const pts: [number,number][] = events.map(e=>[e.lat,e.lng]);
+    if(user) pts.push([user.lat,user.lng]);
+    if(pts.length>1) map.fitBounds(L.latLngBounds(pts),{padding:[48,48],maxZoom:15});
+    else map.setView(pts[0] ?? CENTER,pts.length ? 14 : 12);
+  },[events,user,map]);
+  useEffect(()=>{
+    const e=events.find(e=>e.id===selectedId);
+    if(e) map.setView([e.lat,e.lng],Math.max(14,map.getZoom()));
+  },[selectedId,events,map]);
   return null;
 }
-
-export default function MapView({ events, user, selectedId }: { events: EventItem[]; user: Coords | null; selectedId?: number | null }) {
-  // Several events can share a district centre; spread them slightly so every pin stays clickable.
-  const placed = useMemo(() => {
-    const seen = new Map<string, number>();
-    return events.map((e) => {
-      const key = `${e.lat.toFixed(4)},${e.lng.toFixed(4)}`;
-      const n = seen.get(key) ?? 0;
-      seen.set(key, n + 1);
-      const angle = n * 2.4;
-      const r = n === 0 ? 0 : 0.0016 * Math.sqrt(n);
-      return { event: e, pos: [e.lat + Math.sin(angle) * r, e.lng + Math.cos(angle) * r] as [number, number] };
-    });
-  }, [events]);
-
-  return (
+function GroupMarker({group,selectedId,onSelect}:{group:EventItem[];selectedId?:number|null;onSelect?:(id:number)=>void}){
+  const marker=useRef<L.Marker>(null);
+  const first=group[0]!;
+  const active=group.some(e=>e.id===selectedId);
+  useEffect(()=>{if(active)marker.current?.openPopup();},[active,selectedId]);
+  const icon=L.divIcon({className:'pin-wrap',html:`<span class="pin ${active?'pin-active':''}" style="--pin:${categoryStyle(first.category).color}"><b>${group.length>1?group.length:dayNumber(first.startsAt)}</b></span>`,iconSize:[40,48],iconAnchor:[20,46],popupAnchor:[0,-42]});
+  return <Marker ref={marker} position={[first.lat,first.lng]} icon={icon} eventHandlers={{click:()=>onSelect?.(first.id)}}>
+    <Popup><div className="map-group">
+      {group.length>1 && <b>{group.length} فعاليات في نفس النقطة</b>}
+      {group.map(e=><div className="map-pop" key={e.id}>
+        <span className="chip chip-soft">{e.category}</span><strong>{e.title}</strong>
+        <span className="map-pop-meta">{fullDate(e.startsAt)} · {e.venue}</span>
+        <small>{e.details?.locationAccuracy==='exact'?'موقع محدد من المنظّم':e.details?.locationAccuracy==='illustrative'?'موقع تجريبي توضيحي':'موقع تقريبي'}</small>
+        <span className="map-pop-foot"><b>{priceLabel(e.price)}</b><Link to={`/events/${e.slug}`} onClick={()=>trackView(e.id,'map')}>التفاصيل</Link></span>
+      </div>)}
+    </div></Popup>
+  </Marker>;
+}
+export default function MapView({events,user,selectedId,onSelect}:{events:EventItem[];user:Coords|null;selectedId?:number|null;onSelect?:(id:number)=>void}){
+  // Group exact duplicates at their actual stored coordinate; never move a marker for display.
+  const groups=useMemo(()=>{
+    const grouped=new Map<string,EventItem[]>();
+    for(const e of events){const key=`${e.lat},${e.lng}`;grouped.set(key,[...(grouped.get(key)??[]),e]);}
+    return [...grouped.values()];
+  },[events]);
+  return <div>
+    <p className="hint">الرقم على العلامة المجمّعة هو عدد الفعاليات. المواقع التجريبية والتقريبية ليست عناوين دخول مؤكدة.</p>
+    <div className="map-legend" aria-label="مفتاح الفئات">{[...new Set(events.map(e=>e.category))].map(c=><span key={c}><i style={{background:categoryStyle(c).color}}/>{c}</span>)}</div>
     <MapContainer center={CENTER} zoom={12} scrollWheelZoom={false} className="map" attributionControl>
-      <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" maxZoom={19} />
-      <Fit events={events} user={user} />
-      {user && <CircleMarker center={[user.lat, user.lng]} radius={9} pathOptions={{ color: "#fff", weight: 3, fillColor: "#2f6fe4", fillOpacity: 1 }} />}
-      {placed.map(({ event, pos }) => (
-        <Marker key={event.id} position={pos} icon={pinIcon(categoryStyle(event.category).color, dayNumber(event.startsAt), event.id === selectedId)} eventHandlers={{ click: () => trackView(event.id, "map") }}>
-          <Popup>
-            <div className="map-pop">
-              <span className="chip chip-cat" style={{ ["--cat-soft" as string]: categoryStyle(event.category).soft, ["--cat-ink" as string]: categoryStyle(event.category).ink }}>{event.category}</span>
-              <strong>{event.title}</strong>
-              <span className="map-pop-meta">{dayNumber(event.startsAt)} {monthShort(event.startsAt)} · {timeOfDay(event.startsAt)}</span>
-              <span className="map-pop-meta">{event.venue}{event.distanceKm !== null ? ` · ${distanceLabel(event.distanceKm)}` : ""}</span>
-              <span className="map-pop-foot"><b>{priceLabel(event.price)}</b><Link to={`/events/${event.slug}`}>التفاصيل</Link></span>
-            </div>
-          </Popup>
-        </Marker>
-      ))}
+      <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" maxZoom={19}/>
+      <Fit events={events} user={user} selectedId={selectedId}/>
+      {user && <CircleMarker center={[user.lat,user.lng]} radius={9} pathOptions={{color:'#fff',weight:3,fillColor:'#2f6fe4',fillOpacity:1}}/>}
+      {groups.map(g=><GroupMarker key={`${g[0]!.lat},${g[0]!.lng}`} group={g} selectedId={selectedId} onSelect={onSelect}/>)}
     </MapContainer>
-  );
+  </div>;
 }

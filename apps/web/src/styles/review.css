@@ -1,0 +1,31 @@
+/* Contrast must remain legible when touch browsers retain :hover. */
+.row:hover, .row:hover .stub, .row:hover .stub-day, .row:hover .row-title a,
+.row:hover .row-meta, .row:hover .row-reason { color: var(--poster-fg, var(--ink)); }
+.row:hover .row-reason { border-color: currentColor; }
+.event-card-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:24px; }
+.map-group { max-height:300px; overflow:auto; min-width:210px; }
+.map-group .map-pop + .map-pop { border-top:1px solid #ddd; margin-top:12px; padding-top:12px; }
+.map-legend { display:flex; flex-wrap:wrap; gap:8px 16px; margin:12px 0; font-size:.85rem; }
+.map-legend span { display:inline-flex; align-items:center; gap:6px; }
+.map-legend i { width:10px; height:10px; border-radius:50%; }
+.map-event-list { display:flex; overflow:auto; gap:8px; padding:12px 0; }
+.map-event-list button { flex:0 0 210px; text-align:start; padding:12px; background:#fff; color:#25122f; border:1px solid #d7cedc; border-radius:12px; }
+.map-event-list button.is-on { border:2px solid #68428a; background:#f3edf7; }
+.map-event-list small { display:block; margin-top:4px; }
+.image-preview { width:100%; max-height:230px; object-fit:cover; border-radius:12px; }
+.form-cover-preview { height:230px; overflow:hidden; border-radius:12px; }
+.form-actions { flex-wrap:wrap; }
+.row-media, .ecard-media, .detail-poster, .form-cover-preview { position:relative; }
+.cover-note { position:absolute; bottom:8px; inset-inline-end:8px; z-index:1; background:rgba(255,255,255,.94); color:#25122f; padding:3px 7px; font-size:11px; border-radius:5px; pointer-events:none; }
+@media(max-width:800px) { .event-card-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; } }
+@media(max-width:600px) {
+  .hero-inner { padding-block:34px 24px; gap:22px; }
+  .hero-title { font-size:clamp(2.1rem,9vw,3.2rem); line-height:1.08; }
+  .hero-sub { font-size:.9rem; }
+  .hero-examples { gap:6px; }
+  .hero-examples a { padding:6px 9px; font-size:.78rem; }
+  .event-card-grid { grid-template-columns:minmax(0,1fr); }
+  .detail-actions { flex-wrap:wrap; }
+  .view-toggle { flex-wrap:wrap; }
+}
+.demo-notice { padding: 10px 16px; margin-bottom: 12px; border-inline-start: 4px solid var(--orchid); background: var(--orchid-soft); color: var(--ink); font-size: 14px; }

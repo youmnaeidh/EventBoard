@@ -120,11 +120,16 @@ test.describe("attendee", () => {
     await page.goto("/events/madinah-nights");
     const fav = page.locator(".detail-actions .fav-labeled").first();
     const before = await fav.getAttribute("aria-pressed");
+    const method = before === "true" ? "DELETE" : "PUT";
+    const persisted = page.waitForResponse(r => r.url().endsWith("/favorite") && r.request().method() === method);
     await fav.click();
     await expect(fav).toHaveAttribute("aria-pressed", before === "true" ? "false" : "true");
+    expect((await persisted).ok()).toBeTruthy();
     await page.reload();
     await expect(page.locator(".detail-actions .fav-labeled").first()).toHaveAttribute("aria-pressed", before === "true" ? "false" : "true");
+    const restored = page.waitForResponse(r => r.url().endsWith("/favorite") && r.request().method() !== method);
     await page.locator(".detail-actions .fav-labeled").first().click(); // restore
+    expect((await restored).ok()).toBeTruthy();
   });
 
   test("posts a review on an event that already started and sees it listed", async ({ page }) => {

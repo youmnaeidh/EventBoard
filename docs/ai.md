@@ -28,7 +28,7 @@ and can be scaled or replaced independently. Every capability has a non-AI fallb
 
 *Verified:* 11 search tests including dialect spellings, typos, filters, relaxation, and a regression suite for failures found during development (e.g. «يوغا» leaking
 into sports, max-normalised BM25 making synonym hits look perfect).
-*Not verified:* the dense-embedding path with real model weights (`EMBEDDING_MODEL`, needs `requirements-embeddings.txt`; the sandbox could not download weights).
+*Not verified:* the optional dense-embedding path with real model weights (`EMBEDDING_MODEL`, requiring `requirements-embeddings.txt`) was not exercised in this release.
 
 ## 2. Recommendations
 
@@ -81,7 +81,7 @@ Madinah events behave that way. Registrations are also censored by capacity, so 
 4. Per topic: searches in 28 days, share with zero results, supply, `demandRatio = searches / (supply + 1)`, and 7-day vs previous-7-day trend (only shown when the base has ≥ 3 searches).
 5. **Opportunity**: *high* if supply is zero with meaningful volume (≥ max(10, 3% of clustered searches)) or the ratio is ≥ 4× the median; *medium* if supply ≤ 1 with volume ≥ 10 or ratio ≥ 2×; otherwise *low*.
 
-In the demo data pottery («فخار») is deliberately trending with zero supply, mirroring the story behind the project.
+In the synthetic demo data, pottery («فخار») is deliberately trending with zero supply to illustrate the demand-gap calculation; this is an illustrative scenario, not an observed market finding.
 
 ## 5. Grounded assistant
 

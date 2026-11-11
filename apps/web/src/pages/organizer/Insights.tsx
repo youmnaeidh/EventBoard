@@ -28,9 +28,10 @@ export default function Insights() {
 
   return (
     <>
-      <PageTitle title="وش يطلبه الناس وما لقوه؟" sub={`مبني على ${formatNumber(d.totalSearches)} عملية بحث بآخر 4 أسابيع، مقارنةً بالفعاليات القادمة`}>
+      <PageTitle title="وش يطلبه الناس وما لقوه؟" sub={`عينة من ${formatNumber(d.totalSearches)} بحثًا بعد تقليل التكرار خلال 28 يومًا؛ لا تثبت طلبًا حقيقيًا في بيانات العرض الصناعية`}>
         <Link to="/organizer/events/new" className="btn btn-primary"><Icon name="plus" size={18} />جهّز فعالية</Link>
       </PageTitle>
+      {d.sample && <p className="notice">{d.sample.uniqueSearchers} باحثًا أو جلسة مختلفة. نحتسب نفس النص مرة يوميًا لكل مستخدم/جلسة. لا مخزون يحقق القيود: {d.sample.noInventory} · نتائج صفرية مع وجود مرشحين (قد تكون مشكلة استرجاع): {d.sample.retrievalFailures} · استخدام البحث البديل: {d.sample.engineUnavailable}. السجلات القديمة بلا تشخيص لا تُصنّف كفجوة مؤكدة.</p>}
       {d.mode === "basic" && <p className="notice"><Icon name="info" size={18} />خدمة التحليل الذكي غير متاحة الحين، نعرض تجميعًا بسيطًا لنص البحث بدون تقدير للعرض.</p>}
 
       <div className="gap-list">

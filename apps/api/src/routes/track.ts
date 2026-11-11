@@ -1,7 +1,8 @@
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
 import { z } from "zod";
-import { handler } from "../middleware/errors.js";
+import { handler, notFound } from "../middleware/errors.js";
+import {one} from '../db.js';
 import { recordInteraction } from "../services/interactions.js";
 
 export const trackRouter = Router();
@@ -34,6 +35,7 @@ trackRouter.post(
   limiter,
   handler(async (req, res) => {
     const body = schema.parse(req.body);
+    if (!(await one("SELECT 1 FROM events WHERE id=$1 AND publication_status='published'",[body.eventId]))) throw notFound('هذي الفعالية غير موجودة');
     await recordInteraction({
       userId: req.user?.id ?? null,
       sessionId: body.sessionId,

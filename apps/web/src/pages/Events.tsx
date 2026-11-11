@@ -85,6 +85,7 @@ export default function Events() {
     <div className="container events-page">
       <div className="events-head">
         <h1>{q ? "نتائج البحث" : "الفعاليات"}</h1>
+        <p className="demo-disclosure" role="note">الفعاليات المعروضة بيانات تجريبية للعرض وليست فعاليات حقيقية متاحة للحجز.</p>
         <SmartSearch key={q} initial={q} onSubmit={(v) => set({ q: v, when: "", sort: "" })} />
         {q && (
           <div className="interp" aria-live="polite">

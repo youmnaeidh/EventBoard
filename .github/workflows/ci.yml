@@ -39,7 +39,7 @@ jobs:
       - run: python -m pytest -q
 
   e2e:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [node, ai]
     services:
       postgres:

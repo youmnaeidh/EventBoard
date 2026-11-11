@@ -34,9 +34,9 @@ attendees find the right event quickly; organizers see demand *before* they plan
 
 ## Features
 
-**For visitors** — events happening tonight/this weekend; nearest-first using GPS or a district (kept in the browser only); popularity ranking from the last
+**For visitors** — events happening tonight/this weekend; nearest-first using optional GPS or a district (stored in the browser and sent as rounded coordinates in read requests for distance sorting); popularity ranking from the last
 14 days of behaviour; map view; filters (category, district, price, booking); favourites; share; booking with seat stepper and QR ticket; verified reviews;
-an events assistant that only answers from events that exist.
+an events assistant designed to ground responses in retrieved events, with output validation and a SQL fallback.
 
 **For organizers** — create/edit events with a **live forecast panel** (expected registrations, 80% range, what drives the number, three best slots you can try
 with one click); per-event analytics (funnel, daily views, sources, ratings); a **demand-gap report** (what people searched for and couldn't find — e.g. pottery).
@@ -113,7 +113,7 @@ Actual Playwright captures from the passing hosted verification, using synthetic
 
 - Passwords hashed with bcrypt; JWT in an `httpOnly`, `SameSite=Lax` cookie for same-origin development, or an 8-hour access token held in `sessionStorage` for the cross-origin public demo; login/register rate-limited; identical error for wrong email or password.
 - All SQL parameterised; inputs validated with zod; Arabic error messages; reviews limited to events that started; organizers can only touch their own events. Helmet sets response headers on the API/same-origin deployment; these headers do not apply to the separate GitHub Pages frontend.
-- Behaviour tracking is limited to an anonymous random visitor id stored in the browser, used to personalise recommendations. Location is optional, rounded to ~100 m and kept in `sessionStorage`; it is sent only as query parameters on read requests.
+- Behaviour tracking is limited to an anonymous random visitor id stored in the browser, used to personalise recommendations. Location is optional, rounded to ~100 m and kept in `sessionStorage`; coordinates are sent as query parameters on read requests for distance sorting and are not saved to user tables. As with other query parameters, server and proxy access logs may retain request URLs.
 
 ## Known limits (said plainly)
 

@@ -20,6 +20,9 @@ No new database migration is introduced by this batch. The earlier review migrat
 
 Added six API upload/privacy tests, three raw-HTML share tests, and one cross-origin Pages upload/preview test. Storage calls are mocked in the API tests; decoding uses real Sharp. The browser test mocks the upload endpoints and checks bearer authorization, pending state, preserved images on failure and mobile width. These tests do not claim a live object-store integration check.
 
-Local syntax checks passed. Full testing is delegated to GitHub CI because the current Windows environment cannot install all native/workspace dependencies. Record the final CI result here after this batch runs.
+The final PR-head commit `e2b45e5` passed GitHub CI run `42964147403`, including its
+automated API, web, AI and browser verification. A separate Linux check passed `npm ci`,
+production web/API builds and all five web tests. Live object-store integration has not
+been verified because the API's private storage credentials are not configured.
 
 Before release: complete CI, test the configured private store end to end, review loaded-photo screenshots and verify public API/Pages behavior after deployment.

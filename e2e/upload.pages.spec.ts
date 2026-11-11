@@ -25,6 +25,8 @@ test("Pages upload keeps old cover on failure and authenticates private previews
   const apiOrigin = process.env.E2E_API_URL ?? "http://localhost:4000";
   await page.goto("#/login");
   await page.getByRole("button", { name: "جرّب كمنظّم" }).click();
+  // Wait for the organizer login redirect; the avatar may appear before navigation completes.
+  await expect(page).toHaveURL(/#\/organizer$/);
   await expect(page.locator(".avatar-btn")).toBeVisible();
   const token = await page.evaluate(() => sessionStorage.getItem("eventboard-demo-access-token"));
   const me = await page.request.get(`${apiOrigin}/api/auth/me`, { headers: { authorization: `Bearer ${token}` } });

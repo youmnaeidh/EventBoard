@@ -19,6 +19,9 @@ export interface EventItem {
   category: string;
   eventType: string;
   image: string | null;
+  details?: { posterUrl?: string; imageCredit?: string; imageSource?: string; imageLicense?: string; imageCaption?: string; imageIllustrative?: boolean; imagePosition?: number; locationAccuracy?: "exact" | "approximate" | "illustrative"; dailyStart?: string; dailyEnd?: string; included?: string; parking?: string; accessibility?: string; preparation?: string; cancellation?: string };
+  publicationStatus?: "draft" | "published";
+  openNow?: boolean | null;
   venue: string;
   district: string;
   lat: number;
@@ -108,13 +111,16 @@ export interface OrganizerEventRow {
 }
 
 export interface Analytics {
+  period: {days:number;from:string;to:string;previousFrom:string;timezone:string};
+  previous: {views:number;bookings:number;seats:number;revenue:number};
+  unpricedBookings: number; cancelled: number;
   event: EventItem;
   funnel: { views: number; visitors: number; favorites: number; shares: number; bookings: number; seats: number };
   rates: { favoriteRate: number; bookingRate: number; fillRate: number | null };
   revenue: number;
   daily: { day: string; views: number; favorites: number; bookings: number }[];
   ratings: { rating: number; count: number }[];
-  sources: { source: string; count: number }[];
+  sources: { source: string; count: number; synthetic?:number }[];
 }
 
 export interface Forecast {
@@ -123,7 +129,7 @@ export interface Forecast {
   high: number;
   expectedFillRate: number | null;
   drivers: { factor: string; label: string; impact: number }[];
-  slots: { label: string; weekday: number; hour: number; expectedBookings: number }[];
+  slots: { label: string; weekday: number; hour: number; startsAt?:string; leadDays?:number; expectedBookings: number }[];
   capacityAdvice: string;
   model: { name?: string; algorithm?: string; trainedOn?: { rows: number; source: string }; metrics?: Record<string, number | string> };
 }
@@ -143,6 +149,7 @@ export interface DemandGap {
 }
 
 export interface Insights {
+  sample?: {periodDays:number;uniqueSearchers:number;deduplicatedSearches:number;retrievalFailures:number;noInventory:number;engineUnavailable:number};
   mode: "ai" | "basic";
   gaps: DemandGap[];
   totalSearches: number;

@@ -52,7 +52,8 @@ describe("organizer", () => {
     const first = mine.body.events.find((e: { stats: { bookings: number } }) => e.stats.bookings > 0);
     const res = await org.get(`/api/organizer/events/${first.event.id}/analytics`);
     expect(res.status).toBe(200);
-    expect(res.body.daily).toHaveLength(21);
+    expect(res.body.daily).toHaveLength(14);
+    expect(res.body.period.days).toBe(14);
     expect(res.body.funnel.views).toBeGreaterThan(0);
     expect(res.body.revenue).toBe(res.body.funnel.seats * res.body.event.price);
   });

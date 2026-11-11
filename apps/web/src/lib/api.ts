@@ -58,7 +58,29 @@ async function request<T>(method: string, path: string, body?: unknown, params?:
   return data as T;
 }
 
+
+export function shareUrl(slug: string): string {
+  return (apiOrigin || window.location.origin) + "/api/share/" + encodeURIComponent(slug);
+}
+export function mediaUrl(path: string): string {
+  return path.startsWith("/api/media/") ? apiOrigin + path : path;
+}
+async function imageRequest(path: string, body?: Blob, signal?: AbortSignal): Promise<Response> {
+  const token = crossOriginApi ? sessionStorage.getItem(TOKEN_KEY) : null;
+  const res = await fetch(apiOrigin + path, {
+    method: body ? "POST" : "GET", body, signal,
+    credentials: crossOriginApi ? "omit" : "same-origin",
+    headers: { ...(token ? { authorization: "Bearer " + token } : {}), ...(body ? { "content-type": body.type } : {}) }
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    throw new ApiError(res.status, data?.error?.code ?? "image_error", data?.error?.message ?? "تعذّر تحميل الصورة");
+  }
+  return res;
+}
 export const api = {
+  upload: async (file: Blob): Promise<{ imageUrl: string }> => (await imageRequest("/api/organizer/media", file)).json(),
+  image: async (path: string, signal?: AbortSignal): Promise<Blob> => (await imageRequest(path, undefined, signal)).blob(),
   get: <T,>(path: string, params?: Params) => request<T>("GET", path, undefined, params),
   post: <T,>(path: string, body?: unknown) => request<T>("POST", path, body ?? {}),
   put: <T,>(path: string, body?: unknown) => request<T>("PUT", path, body ?? {}),

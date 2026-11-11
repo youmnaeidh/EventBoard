@@ -1,4 +1,5 @@
 import { Link, useParams } from "react-router-dom";
+import { useState } from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { ChartCard, HBars, LineChart, ORDINAL, C1, C2 } from "../../components/charts";
 import { Icon } from "../../components/Icon";
@@ -13,7 +14,8 @@ const SOURCES: Record<string, string> = { home: "الرئيسية", search: "ا�
 
 export default function Analytics() {
   const { id } = useParams();
-  const q = useQuery({ queryKey: ["org-analytics", id], queryFn: () => api.get<AnalyticsData>(`/organizer/events/${id}/analytics`) });
+  const [days,setDays] = useState(14);
+  const q = useQuery({ queryKey: ["org-analytics", id, days], queryFn: () => api.get<AnalyticsData>(`/organizer/events/${id}/analytics`,{days}) });
   useDocTitle(q.data?.event.title);
 
   if (q.isError) return <ErrorBox onRetry={() => q.refetch()} />;
@@ -28,32 +30,35 @@ export default function Analytics() {
       </PageTitle>
 
       <div className="tiles">
-        <div className="tile"><span className="tile-label">المشاهدات</span><b className="tile-value">{formatNumber(a.funnel.views)}</b><span className="tile-sub num">{formatNumber(a.funnel.visitors)} زائر مختلف</span></div>
-        <div className="tile"><span className="tile-label">معدل الحفظ</span><b className="tile-value">{percent(a.rates.favoriteRate, 1)}</b><span className="tile-sub">من الزوّار</span></div>
-        <div className="tile"><span className="tile-label">معدل الحجز</span><b className="tile-value">{percent(a.rates.bookingRate, 1)}</b><span className="tile-sub">من الزوّار</span></div>
-        <div className="tile"><span className="tile-label">الإيراد</span><b className="tile-value">{money(a.revenue)}</b>{a.rates.fillRate !== null && <span className="tile-sub">امتلاء {a.rates.fillRate}%</span>}</div>
+        <div className="tile"><span className="tile-label">المشاهدات</span><b className="tile-value">{formatNumber(a.funnel.views)}</b><span className="tile-sub num">{formatNumber(a.funnel.visitors)} جلسة مختلفة · الفترة السابقة {formatNumber(a.previous.views)}</span></div>
+        <div className="tile"><span className="tile-label">حفظ لكل 100 مشاهدة</span><b className="tile-value">{percent(a.rates.favoriteRate, 1)}</b><span className="tile-sub">محفوظات حالية أُنشئت بالفترة ÷ المشاهدات</span></div>
+        <div className="tile"><span className="tile-label">حجوزات لكل 100 مشاهدة</span><b className="tile-value">{percent(a.rates.bookingRate, 1)}</b><span className="tile-sub">الحجوزات المؤكدة أُنشئت بالفترة ÷ المشاهدات</span></div>
+        <div className="tile"><span className="tile-label">قيمة الحجوزات التجريبية</span><b className="tile-value">{money(a.revenue)}</b><span className="tile-sub">ليست مبالغ محصّلة · السابقة {money(a.previous.revenue)}</span></div>
       </div>
+      <div className="toolbar"><label>الفترة <select value={days} onChange={e=>setDays(Number(e.target.value))}>{[7,14,30].map(d=><option key={d} value={d}>آخر {d} يومًا</option>)}</select></label><Link className="btn btn-soft btn-sm" to={`/events/${a.event.slug}`}>{a.event.publicationStatus==='draft'?'معاينة المسودة':'صفحة الفعالية'}</Link></div>
+      <p className="hint">كل الرسوم لنفس الفترة بتوقيت الرياض وتشمل اليوم الجزئي. المقارنة مع {days} يومًا السابقة. المشاهدة تُحتسب مرة لكل جلسة وفعالية خلال 30 دقيقة؛ الجلسة ليست شخصًا مؤكدًا.</p>
+      <p className="notice">{formatNumber(a.funnel.bookings)} حجز مؤكد / {formatNumber(a.funnel.seats)} مقعد · {a.cancelled} حجز أُنشئ بالفترة وأُلغي. السابقة: {a.previous.bookings} حجز / {a.previous.seats} مقعد.{a.rates.fillRate!==null && ` الامتلاء الحالي طوال عمر الفعالية: ${a.rates.fillRate}%.`}{a.unpricedBookings>0 && ` لا تشمل القيمة ${a.unpricedBookings} حجزًا لا يُعرف سعره التاريخي.`}</p>
 
       <div className="chart-grid">
-        <ChartCard title="مسار الاهتمام" sub="من المشاهدة إلى الحجز (ترتيب المراحل بتدرّج لون واحد)">
+        <ChartCard title="ملخص التفاعل" sub="مؤشرات مستقلة، وليست مراحل متسلسلة لنفس الأشخاص">
           <HBars
-            tableHead={["المرحلة", "العدد"]}
+            tableHead={["المؤشر", "العدد"]}
             format={formatNumber}
             rows={[
               { label: "مشاهدات", value: a.funnel.views, color: ORDINAL[0] },
-              { label: "زوّار مختلفون", value: a.funnel.visitors, color: ORDINAL[1] },
+              { label: "جلسات مختلفة", value: a.funnel.visitors, color: ORDINAL[1] },
               { label: "حفظوا", value: a.funnel.favorites, color: ORDINAL[2] },
               { label: "شاركوا", value: a.funnel.shares, color: ORDINAL[3] },
               { label: "حجزوا", value: a.funnel.bookings, color: ORDINAL[4] }
             ]}
           />
         </ChartCard>
-        <ChartCard title="مصدر الزيارات" sub="من وين وصلوا للفعالية">
+        <ChartCard title="مصدر الزيارات" sub="المصادر في بيانات العرض التجريبية مولّدة صناعيًا ومعلّمة، وليست حملات حقيقية">
           <HBars rows={a.sources.map((s) => ({ label: SOURCES[s.source] ?? s.source, value: s.count }))} format={formatNumber} tableHead={["المصدر", "المشاهدات"]} />
         </ChartCard>
       </div>
 
-      <ChartCard title="المشاهدات يوميًا" sub="آخر 14 يومًا">
+      <ChartCard title="المشاهدات يوميًا" sub={`آخر ${days} يومًا`}>
         <LineChart labels={labels} series={[{ name: "مشاهدات", color: C1, values: a.daily.map((d) => d.views) }]} />
       </ChartCard>
       <ChartCard title="المحفوظات والحجوزات يوميًا" sub="مقياس مستقل عن المشاهدات، لأن الأعداد أصغر بكثير">

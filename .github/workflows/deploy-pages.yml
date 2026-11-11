@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   configuration:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       pages: read
     outputs:
@@ -39,7 +39,7 @@ jobs:
   deploy:
     needs: configuration
     if: github.ref == 'refs/heads/main' && (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
       contents: read

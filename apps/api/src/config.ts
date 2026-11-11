@@ -14,6 +14,14 @@ const schema = z.object({
   AI_TIMEOUT_MS: z.coerce.number().int().default(8000),
   // Must be the exact browser origin; no path and no trailing slash.
   PUBLIC_WEB_ORIGIN: z.string().url().refine((s) => new URL(s).origin === s, "Expected a bare origin").optional(),
+  PUBLIC_WEB_URL: z.string().url().default("https://youmnaeidh.github.io/EventBoard/"),
+  PUBLIC_API_URL: z.string().url().default("http://localhost:4000"),
+  WEB_HASH_ROUTER: z.enum(["true", "false"]).default("true"),
+  AWS_ENDPOINT_URL_S3: z.string().url().optional(),
+  AWS_REGION: z.string().default("eu-central-1"),
+  AWS_ACCESS_KEY_ID: z.string().default(""),
+  AWS_SECRET_ACCESS_KEY: z.string().default(""),
+  IMAGE_BUCKET: z.string().default(""),
   // Directory with the built web app. When present the API serves it (single-origin deploy).
   WEB_DIST: z.string().default("")
 });

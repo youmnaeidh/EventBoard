@@ -28,6 +28,18 @@ def test_forecast_shape_and_interval_order():
     assert r["model"]["metrics"]["mae"] < r["model"]["metrics"]["baselineMaeCategoryMean"]
 
 
+def test_slots_recompute_actual_date_and_lead_time():
+    from datetime import datetime
+    starts = at(5, 19)
+    r = forecast(startsAt=starts.isoformat(), leadDays=14)
+    for slot in r["slots"]:
+        actual = datetime.fromisoformat(slot["startsAt"])
+        assert actual >= starts
+        assert slot["leadDays"] == pytest.approx(14 + (actual-starts).total_seconds()/86400)
+        chosen = forecast(startsAt=slot["startsAt"], leadDays=slot["leadDays"])
+        assert chosen["expectedBookings"] == slot["expectedBookings"]
+
+
 def test_forecast_learns_expected_effects():
     # day 5 from NOW (Sunday) is Friday; day 2 is Tuesday
     friday_evening = forecast(startsAt=at(5, 19).isoformat())["expectedBookings"]

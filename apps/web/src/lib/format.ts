@@ -60,7 +60,7 @@ export function distanceLabel(km: number | null | undefined): string | null {
 /** Short relative label used on cards: "جارية الحين", "الليلة", "بكرة", "بعد 5 أيام". */
 export function whenLabel(event: Pick<EventItem, "startsAt" | "endsAt" | "status">, now = new Date()): string {
   if (event.status === "ended") return "انتهت";
-  if (event.status === "live") return "جارية الحين";
+  if (event.status === "live") return sameLocalDay(event.startsAt, event.endsAt) ? "جارية الحين" : "مستمرة";
   const nowIso = now.toISOString();
   const diff = localDayIndex(event.startsAt) - localDayIndex(nowIso);
   const hour = Number(new Intl.DateTimeFormat("en-GB", { timeZone: TZ, hour: "2-digit", hour12: false }).format(new Date(event.startsAt)));

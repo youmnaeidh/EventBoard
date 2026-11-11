@@ -96,7 +96,7 @@ export interface ForecastResponse {
   high: number;
   expectedFillRate: number | null;
   drivers: { factor: string; label: string; impact: number }[];
-  slots: { label: string; weekday: number; hour: number; expectedBookings: number }[];
+  slots: { label: string; weekday: number; hour: number; startsAt?:string; leadDays?:number; expectedBookings: number }[];
   capacityAdvice: string;
   model: Record<string, unknown>;
 }

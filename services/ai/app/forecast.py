@@ -4,7 +4,7 @@
   80% prediction interval.
 * Explanations are counterfactual and model-agnostic: for each factor we re-predict with that factor
   replaced by a neutral reference (average over its values) and report the % difference.
-* Slot advice scans weekday x start-hour combinations holding everything else fixed.
+* Slot advice evaluates actual future dates and recomputes promotion lead time for each candidate.
 * Training data: data/historical_events.csv (synthetic, see app/synthetic.py). Swap in real bookings by
   passing a DataFrame with the same columns to ForecastModel.fit.
 """
@@ -171,7 +171,8 @@ class ForecastModel:
             "high": int(round(high)),
             "expectedFillRate": round(expected / capacity, 2) if capacity else None,
             "drivers": self._drivers(base, expected, capacity),
-            "slots": self._slots(base, capacity),
+            "slots": self._slots(base, capacity, starts),
+            "target": "registrations",
             "capacityAdvice": self._capacity_advice(expected, high, capacity),
             "model": {k: self.card[k] for k in ("name", "algorithm", "trainedOn", "metrics")},
         }
@@ -201,19 +202,29 @@ class ForecastModel:
         drivers.sort(key=lambda d: abs(d["impact"]), reverse=True)
         return drivers[:4]
 
-    def _slots(self, base: dict, capacity: float | None) -> list[dict]:
+    def _slots(self, base: dict, capacity: float | None, starts) -> list[dict]:
+        from datetime import timedelta
+        anchor = timeutil.to_riyadh(starts)
         best_per_day = []
         for weekday in range(7):
-            rows = pd.concat([self._row(**{**base, "weekday": weekday, "hour": h}) for h in HOURS], ignore_index=True)
+            candidates = []
+            for h in HOURS:
+                days = (weekday - timeutil.weekday_sun0(anchor)) % 7
+                date = anchor.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=days, hours=h)
+                if date < anchor:
+                    date += timedelta(days=7)
+                lead = max(0.0, base["lead"] + (date-anchor).total_seconds()/86400)
+                candidates.append((date, lead))
+            rows = pd.concat([self._row(**{**base, "weekday": weekday, "hour": h, "lead": candidates[i][1]}) for i,h in enumerate(HOURS)], ignore_index=True)
             preds = self._predict_rows(rows, capacity)
             k = int(np.argmax(preds))
-            best_per_day.append((float(preds[k]), weekday, HOURS[k]))
+            best_per_day.append((float(preds[k]), weekday, HOURS[k], candidates[k][0], candidates[k][1]))
         best_per_day.sort(reverse=True)
         slots = []
-        for value, weekday, hour in best_per_day[:3]:
+        for value, weekday, hour, date, lead in best_per_day[:3]:
             h12 = hour % 12 or 12
             label = f"{timeutil.WEEKDAYS_AR[weekday]} {h12}:00 {'ص' if hour < 12 else 'م'}"
-            slots.append({"label": label, "weekday": weekday, "hour": hour, "expectedBookings": int(round(value))})
+            slots.append({"label": label, "weekday": weekday, "hour": hour, "startsAt": date.isoformat(), "leadDays": lead, "expectedBookings": int(round(value))})
         return slots
 
     @staticmethod

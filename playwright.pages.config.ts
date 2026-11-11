@@ -3,7 +3,7 @@ import { defineConfig } from "@playwright/test";
 // Exercise the production Pages build against a separate API origin, with no proxy.
 export default defineConfig({
   testDir: "./e2e",
-  testMatch: "pages.spec.ts",
+  testMatch: ["pages.spec.ts", "upload.pages.spec.ts"],
   timeout: 60_000,
   workers: 1,
   retries: 0,

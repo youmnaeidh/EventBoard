@@ -11,7 +11,7 @@ import { Empty, ErrorBox } from "../components/ui";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { useUserLocation } from "../context/LocationContext";
-import { api, ApiError } from "../lib/api";
+import { api, ApiError, shareUrl } from "../lib/api";
 import { dateRange, dayNumber, distanceLabel, monthName, priceLabel, seatsLabel, weekdayName, whenLabel } from "../lib/format";
 import { trackShare, trackView } from "../lib/track";
 import { useDocTitle } from "../lib/useDocTitle";
@@ -224,7 +224,7 @@ export default function EventDetail() {
 
   async function share() {
     trackShare(event!.id);
-    const url = window.location.href;
+    const url = shareUrl(event!.slug);
     try {
       if (navigator.share) await navigator.share({ title: event!.title, url });
       else {
@@ -253,7 +253,7 @@ export default function EventDetail() {
             <p className="detail-summary">{event.summary}</p>
             <div className="detail-actions">
               <FavButton eventId={event.id} initial={event.isFavorite} label />
-              <button type="button" className="fav fav-labeled" onClick={share}><Icon name="share" size={20} /><span>مشاركة</span></button>
+              {event.publicationStatus !== 'draft' && <button type="button" className="fav fav-labeled" onClick={share}><Icon name="share" size={20} /><span>مشاركة</span></button>}
               <button type="button" className="fav fav-labeled" onClick={() => downloadCalendar(event)}><Icon name="calendar" size={20} /><span>أضف للتقويم</span></button>
             </div>
           </div>

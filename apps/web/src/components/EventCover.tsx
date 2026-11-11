@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { categoryStyle } from "../lib/categories";
-import { assetUrl } from "../lib/assets";
+import { useCoverUrl } from "../lib/useCoverUrl";
 import type { EventItem } from "../types";
 
 function hash(text: string): number {
@@ -16,11 +16,12 @@ function hash(text: string): number {
  */
 export function EventCover({ event, eager = false }: { event: Pick<EventItem, "image" | "category" | "title" | "details">; eager?: boolean }) {
   const [failed, setFailed] = useState(false);
+  const imageUrl = useCoverUrl(event.image);
   useEffect(() => setFailed(false), [event.image]);
-  if (event.image && !failed) {
+  if (event.image && imageUrl && !failed) {
     const cdn = event.image.startsWith('https://images.unsplash.com/');
     const sized = (width: number) => { const u = new URL(event.image!); u.searchParams.set('w', String(width)); return u.href; };
-    return <><img className="cover-img" src={assetUrl(event.image)} srcSet={cdn ? `${sized(480)} 480w, ${sized(800)} 800w, ${sized(1200)} 1200w` : undefined} sizes={eager ? '(max-width: 700px) 100vw, 480px' : '(max-width: 700px) 50vw, 320px'} style={{ objectPosition: `50% ${event.details?.imagePosition ?? 50}%` }} alt="" width={1200} height={800} loading={eager ? "eager" : "lazy"} decoding="async" onError={() => setFailed(true)} />{event.details?.imageIllustrative && <span className="cover-note" title={event.details.imageCaption}>صورة توضيحية</span>}</>;
+    return <><img className="cover-img" src={imageUrl} srcSet={cdn ? `${sized(480)} 480w, ${sized(800)} 800w, ${sized(1200)} 1200w` : undefined} sizes={eager ? '(max-width: 700px) 100vw, 480px' : '(max-width: 700px) 50vw, 320px'} style={{ objectPosition: `50% ${event.details?.imagePosition ?? 50}%` }} alt="" width={1200} height={800} loading={eager ? "eager" : "lazy"} decoding="async" onError={() => setFailed(true)} />{event.details?.imageIllustrative && <span className="cover-note" title={event.details.imageCaption}>صورة توضيحية</span>}</>;
   }
   const { bg, a, b, dark } = categoryStyle(event.category).poster;
   const ink = dark ? "#fff7ec" : "#25122f";

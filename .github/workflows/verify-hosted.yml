@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   hosted:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
       VITE_API_BASE_URL: https://eventboard-api-orv8.onrender.com

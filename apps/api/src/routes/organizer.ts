@@ -13,6 +13,7 @@ import {
 } from "../services/aiClient.js";
 import { getEventByRef, listEvents } from "../services/events.js";
 import { riyadhMidnight } from "../services/time.js";
+import { mediaPathPattern as mediaPath } from "../services/imageStorage.js";
 
 export const organizerRouter = Router();
 organizerRouter.use(requireOrganizer);
@@ -55,7 +56,8 @@ const eventSchema = z
     imageUrl: z
       .string()
       .max(500)
-      .refine((u) => /^https:\/\/[^\s]+$/.test(u) || /^\/assets\/events\/[a-zA-Z0-9_-]+\.(?:webp|jpg|jpeg|png)$/.test(u), "استخدم رابط https أو صورة من مكتبة الفعاليات")
+      .transform(u => u.trim())
+      .refine((u) => /^https:\/\/[^\s]+$/.test(u) || mediaPath.test(u) || /^\/assets\/events\/[a-zA-Z0-9_-]+\.(?:webp|jpg|jpeg|png)$/.test(u), "استخدم رابط https أو صورة من مكتبة الفعاليات")
       .nullable()
       .optional()
   })
@@ -116,22 +118,21 @@ organizerRouter.post(
   "/events",
   handler(async (req, res) => {
     const body = eventSchema.parse(req.body);
+    if (body.imageUrl?.startsWith('/api/media/') && mediaPath.exec(body.imageUrl)?.[1] !== req.user!.id) throw forbidden('استخدم صورة رفعتها من حسابك');
     if (new Date(body.startsAt).getTime() < Date.now() - 60_000) throw badRequest("وقت البداية لازم يكون في المستقبل");
     const d = districts[body.district]!;
     const capacity = body.capacity ?? null;
     const row = await one<{ id: number }>(
       `INSERT INTO events (slug, title, summary, description, category, event_type, image_url, venue, district, lat, lng,
-         starts_at, ends_at, price_sar, requires_booking, capacity, audience, highlights, organizer_id, organizer_name)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20) RETURNING id`,
+         starts_at, ends_at, price_sar, requires_booking, capacity, audience, highlights, organizer_id, organizer_name, details, publication_status)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22) RETURNING id`,
       [
         slugFor(), body.title, body.summary, body.description, body.category, body.eventType, body.imageUrl ?? null,
-        body.venue, body.district, d.lat, d.lng, body.startsAt, body.endsAt, body.price, capacity !== null, capacity,
-        body.audience, body.highlights, req.user!.id, req.user!.name
+        body.venue, body.district, body.lat ?? d.lat, body.lng ?? d.lng, body.startsAt, body.endsAt, body.price, capacity !== null, capacity,
+        body.audience, body.highlights, req.user!.id, req.user!.name,
+        JSON.stringify({ ...body.details, locationAccuracy: body.lat === undefined ? 'approximate' : (body.details.locationAccuracy ?? 'exact') }), body.publicationStatus
       ]
     );
-    await query('UPDATE events SET details=$2, publication_status=$3, lat=$4, lng=$5 WHERE id=$1',
-      [row!.id, JSON.stringify({ ...body.details, locationAccuracy: body.lat === undefined ? 'approximate' : (body.details.locationAccuracy ?? 'exact') }),
-        body.publicationStatus, body.lat ?? d.lat, body.lng ?? d.lng]);
     res.status(201).json({ event: await getEventByRef(String(row!.id), { userId: req.user!.id }) });
   })
 );
@@ -153,6 +154,7 @@ organizerRouter.put(
     const owned = await ownedEvent(id, req.user!.id);
     if (owned.ends_at.getTime() < Date.now()) throw badRequest("ما تقدر تعدّل فعالية منتهية");
     const body = eventSchema.parse(req.body);
+    if (body.imageUrl?.startsWith('/api/media/') && mediaPath.exec(body.imageUrl)?.[1] !== req.user!.id) throw forbidden('استخدم صورة رفعتها من حسابك');
     const capacity = body.capacity ?? null;
 
     const seats = await one<{ taken: number }>(
@@ -166,19 +168,19 @@ organizerRouter.put(
       throw conflict("فيه حجوزات حالية، ما تقدر تلغي نظام الحجز", "has_bookings");
     }
     const d = districts[body.district]!;
+    const details = { ...body.details };
+    if (body.lat === undefined && owned.district !== body.district) details.locationAccuracy = 'approximate';
     await query(
       `UPDATE events SET title=$2, summary=$3, description=$4, category=$5, event_type=$6, image_url=$7, venue=$8,
          district=$9, lat=$10, lng=$11, starts_at=$12, ends_at=$13, price_sar=$14, requires_booking=$15, capacity=$16,
-         audience=$17, highlights=$18 WHERE id = $1`,
+         audience=$17, highlights=$18, details=jsonb_strip_nulls(details || $19::jsonb), publication_status=$20 WHERE id = $1`,
       [
         id, body.title, body.summary, body.description, body.category, body.eventType, body.imageUrl ?? null, body.venue,
         body.district, body.lat ?? (owned.district === body.district ? owned.lat : d.lat), body.lng ?? (owned.district === body.district ? owned.lng : d.lng), body.startsAt, body.endsAt, body.price, capacity !== null, capacity, body.audience,
-        body.highlights
+        body.highlights, JSON.stringify(Object.fromEntries(Object.entries(details).map(([k,v]) => [k,v === '' ? null : v]))),
+        req.body.publicationStatus === undefined ? owned.publication_status : body.publicationStatus
       ]
     );
-    const details = { ...body.details };
-    if (body.lat === undefined && owned.district !== body.district) details.locationAccuracy = 'approximate';
-    await query('UPDATE events SET details=jsonb_strip_nulls(details || $2::jsonb), publication_status=$3 WHERE id=$1', [id, JSON.stringify(Object.fromEntries(Object.entries(details).map(([k,v])=>[k,v===''?null:v]))), req.body.publicationStatus===undefined ? owned.publication_status : body.publicationStatus]);
     const event = await getEventByRef(String(id), { userId: req.user!.id });
     res.json({ event });
   })

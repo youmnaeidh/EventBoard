@@ -13,6 +13,8 @@ import { eventsRouter } from "./routes/events.js";
 import { meRouter } from "./routes/me.js";
 import { organizerRouter } from "./routes/organizer.js";
 import { trackRouter } from "./routes/track.js";
+import { mediaRouter } from "./routes/media.js";
+import { shareRouter } from "./routes/share.js";
 
 export function createApp() {
   const app = express();
@@ -25,7 +27,7 @@ export function createApp() {
       contentSecurityPolicy: {
         useDefaults: true,
         directives: {
-          "img-src": ["'self'", "data:", "https:"],
+          "img-src": ["'self'", "data:", "blob:", "https:"],
           "media-src": ["'self'"],
           "connect-src": ["'self'"],
           "style-src": ["'self'", "'unsafe-inline'"],
@@ -59,6 +61,8 @@ export function createApp() {
   });
 
   app.use("/api", loadUser);
+  app.use("/api", mediaRouter);
+  app.use("/api", shareRouter);
   app.use("/api/auth", authRouter);
   app.use("/api/me", meRouter);
   app.use("/api/organizer", organizerRouter);

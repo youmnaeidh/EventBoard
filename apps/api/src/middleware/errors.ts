@@ -26,6 +26,8 @@ export const handler =
   };
 
 export const errorMiddleware: ErrorRequestHandler = (error, _req, res, _next) => {
+  if (error?.type === "entity.too.large") { res.status(413).json({ error: { code: "payload_too_large", message: "حجم الملف أو الطلب أكبر من المسموح" } }); return; }
+
   if (error instanceof HttpError) {
     res.status(error.status).json({ error: { code: error.code, message: error.message, details: error.details } });
     return;

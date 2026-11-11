@@ -80,6 +80,9 @@ export default function Home() {
                 <Link key={ex} to={`/events?q=${encodeURIComponent(ex)}`}>{ex}</Link>
               ))}
             </div>
+            <p className="demo-disclosure demo-disclosure-hero" role="note">
+              نسخة تجريبية للعرض فقط — الفعاليات والحجوزات والتقييمات بيانات افتراضية وليست إعلانات لفعاليات حقيقية.
+            </p>
           </div>
         </div>
         {!catalogue.isLoading && derived.active.length > 0 && (
@@ -172,7 +175,7 @@ export default function Home() {
 
       {reviews.data && reviews.data.reviews.length > 0 && (
         <section className="section container">
-          <SectionHead title="وش يقول الحضور" sub="آخر التقييمات المكتوبة على المنصة" />
+          <SectionHead title="وش يقول الحضور" sub="أمثلة تقييمات تجريبية لعرض طريقة عمل المنصة" />
           <div className="quotes">
             {reviews.data.reviews.map((r) => (
               <figure key={r.id} className="quote">

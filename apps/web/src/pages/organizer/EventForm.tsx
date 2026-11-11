@@ -11,6 +11,7 @@ import { fromLocalInput, hoursBetween, localNowInput, nextSlot, toLocalInput } f
 import { useDocTitle } from "../../lib/useDocTitle";
 import type { EventItem, Forecast } from "../../types";
 import { EventCover } from "../../components/EventCover";
+import { uploadEventImage } from '../../lib/imageUpload';
 
 interface FormState {
   title: string; summary: string; description: string; category: string; eventType: string; venue: string; district: string;
@@ -77,6 +78,18 @@ export default function EventForm() {
   const [error, setError] = useState<ApiError | null>(null);
   const [loaded, setLoaded] = useState(!editing);
   const [preview, setPreview] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const mediaConfig = useQuery({ queryKey: ['media-config'], queryFn: () => api.get<{ enabled: boolean }>('/organizer/media/config'), retry: false });
+  async function selectImage(file?: File) {
+    if (!file || uploading || save.isPending) return;
+    setUploading(true); setUploadError('');
+    try {
+      const imageUrl = await uploadEventImage(file);
+      setF(current => ({ ...current, imageUrl, details: { ...current.details, imageCredit: '', imageSource: '', imageLicense: '', imageCaption: '', imagePosition: 50 } }));
+    } catch (error) { setUploadError(error instanceof Error ? error.message : 'تعذّر رفع الصورة'); }
+    finally { setUploading(false); }
+  }
 
   const existing = useQuery({ enabled: editing, queryKey: ["org-event", id], queryFn: () => api.get<{ event: EventItem }>(`/events/${id}`).then((r) => r) });
   useEffect(() => {
@@ -138,6 +151,7 @@ export default function EventForm() {
 
   function submit(e: FormEvent) {
     e.preventDefault();
+    if (uploading || save.isPending) return;
     setError(null);
     save.mutate('published');
   }
@@ -160,6 +174,12 @@ export default function EventForm() {
       <PageTitle title={editing ? "تعديل الفعالية" : "فعالية جديدة"} sub="غيّر الموعد أو السعر أو السعة وشوف التوقع يتحدّث مباشرة" />
       <div className="form-grid">
         <form className="org-form" onSubmit={submit} noValidate>
+          <fieldset disabled={uploading}>
+            <legend>صورة الفعالية</legend>
+            <label className="field"><span>رفع صورة من الجهاز</span><input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploading || save.isPending || !mediaConfig.data?.enabled} aria-describedby="image-upload-hint" onChange={e => { void selectImage(e.target.files?.[0]); e.target.value = ''; }}/></label>
+            <p id="image-upload-hint" className="hint">{uploading ? 'جارٍ تجهيز الصورة ورفعها…' : mediaConfig.data?.enabled ? 'JPG أو PNG أو WebP، حتى 10 ميجابايت. نصغّر الصورة ونزيل بيانات الموقع قبل حفظها.' : 'الرفع من الجهاز غير متاح في هذه البيئة حاليًا؛ يمكنك استخدام رابط صورة أدناه.'}</p>
+            {uploadError && <p className="form-error" role="alert">{uploadError}</p>}
+          </fieldset>
           {error && !error.details?.length && <p className="form-error" role="alert">{error.message}</p>}
           <fieldset>
             <legend>الأساسيات</legend>
@@ -211,18 +231,18 @@ export default function EventForm() {
           <fieldset>
             <legend>تفاصيل إضافية</legend>
             <label className="field"><span>أبرز النقاط (سطر لكل نقطة، حتى 6)</span><textarea rows={3} value={f.highlights} onChange={(e) => set("highlights", e.target.value)} /></label>
-            <label className="field"><span>رابط الصورة (اختياري، https)</span><input type="url" dir="ltr" value={f.imageUrl} onChange={(e) => set("imageUrl", e.target.value)} placeholder="https://…" /><small className="field-error">{fieldErr("imageUrl")}</small></label>
+            <label className="field"><span>رابط الصورة (اختياري، https)</span><input type="text" dir="ltr" disabled={uploading || save.isPending} value={f.imageUrl} onChange={(e) => set("imageUrl", e.target.value)} placeholder="https://…" /><small className="field-error">{fieldErr("imageUrl")}</small></label>
             {f.imageUrl && <div className="form-cover-preview"><EventCover event={{image:f.imageUrl,category:f.category,title:f.title,details:f.details}}/></div>}
             <label className="field"><span>موضع الجزء الظاهر من الصورة</span><input type="range" min={0} max={100} value={f.details.imagePosition ?? 50} onChange={e=>detail('imagePosition',Number(e.target.value))}/></label>
             <label className="check"><input type="checkbox" checked={f.details.imageIllustrative ?? true} onChange={e=>detail('imageIllustrative',e.target.checked)}/>صورة توضيحية، وليست صورة الفعالية نفسها</label>
             {([['imageCredit','المصوّر / صاحب الصورة'],['imageSource','رابط المصدر (https)'],['imageLicense','الترخيص / إذن الاستخدام'],['posterUrl','رابط الملصق الكامل (https)']] as const).map(([key,label])=><label className="field" key={key}><span>{label}</span><input value={f.details[key] ?? ''} onChange={e=>detail(key,e.target.value)} maxLength={key==='imageCredit'?180:key==='imageLicense'?120:500}/><small className="field-error">{fieldErr('details.'+key)}</small></label>)}
-            <p className="hint">استخدم صورة تملك حق استعمالها. الرفع الدائم من الجهاز يحتاج إعداد مخزن صور؛ رابط الصورة يُحفظ كما هو.</p>
+            <p className="hint">استخدم صورة تملك حق استعمالها. صور المسودات المرفوعة تظهر لك فقط، وتظهر للجميع عند نشر الفعالية.</p>
             {([['included','ماذا يشمل السعر؟'],['parking','المواقف'],['accessibility','سهولة الوصول'],['preparation','التجهيزات المطلوبة'],['cancellation','سياسة الإلغاء']] as const).map(([key,label])=><label className="field" key={key}><span>{label}</span><textarea rows={2} value={f.details[key] ?? ''} onChange={e=>detail(key,e.target.value)} maxLength={key==='included'||key==='cancellation'?500:300}/></label>)}
           </fieldset>
 
           <div className="form-actions">
-            <button type="submit" className="btn btn-primary btn-lg" disabled={save.isPending || !f.title || !f.venue}>{save.isPending ? "جاري الحفظ…" : f.publicationStatus==='draft'?'نشر المسودة':editing ? "حفظ التعديلات" : "نشر الفعالية"}</button>
-            <button type="button" className="btn btn-soft" disabled={save.isPending || !f.title || !f.venue} onClick={()=>{setError(null);save.mutate('draft');}}>حفظ كمسودة</button>
+            <button type="submit" className="btn btn-primary btn-lg" disabled={uploading || save.isPending || !f.title || !f.venue}>{save.isPending ? "جاري الحفظ…" : f.publicationStatus==='draft'?'نشر المسودة':editing ? "حفظ التعديلات" : "نشر الفعالية"}</button>
+            <button type="button" className="btn btn-soft" disabled={uploading || save.isPending || !f.title || !f.venue} onClick={()=>{setError(null);save.mutate('draft');}}>حفظ كمسودة</button>
             <button type="button" className="btn btn-ghost" aria-expanded={preview} onClick={()=>setPreview(!preview)}>معاينة قبل النشر</button>
             <Link to="/organizer" className="btn btn-ghost btn-lg">إلغاء</Link>
           </div>

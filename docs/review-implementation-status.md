@@ -25,7 +25,11 @@ Source: EventBoard_Review_2026-10-20_AR.md. Work is on draft PR #3, not producti
 - Search diagnostics distinguish constrained-inventory absence from zero-result retrieval. Repeated same-text searches are counted once per identity/day.
 - Forecast slots carry an actual date and recomputed promotion lead time, and the UI uses that date.
 - Forecast output is labelled registrations/seats, not verified attendance; synthetic-data limits remain visible.
-- Client-side event share metadata (static social crawlers still require prerendering; not claimed solved).
+- Server-rendered `/api/share/:slug` pages provide Open Graph/Twitter metadata for published events;
+  draft events remain inaccessible, and shared links lead back to the Pages event detail.
+- Optional private image uploads accept JPEG/PNG/WebP, re-encode to WebP without EXIF data,
+  and enforce organizer ownership. Without private S3 credentials, the upload control is disabled
+  and existing URL-based covers still work.
 
 ## Verification and release gates
 
@@ -37,23 +41,38 @@ Source: EventBoard_Review_2026-10-20_AR.md. Work is on draft PR #3, not producti
   (workspace symlinks were denied and some optional/native packages are incomplete), so full verification runs in GitHub CI.
 - Added regression tests: complete media catalogue, draft privacy, booking-price snapshots,
   analytics ranges, preserved coordinates/images, concurrent view deduplication, opening hours and forecast-slot consistency.
+- Latest PR-head commit `e2b45e59c7e07d6602e7935aa432344f9ed5e9a6` passed GitHub CI run
+  `42964147403` (11 November). Local Linux `npm ci`, full web/API TypeScript production build,
+  and all 5 web tests passed independently. Local Python tests could not run because pytest is absent;
+  GitHub's Python CI job is part of the successful run.
+- Read-only live probes on 11 November returned HTTP 200 from API `/api/health` and AI `/health`;
+  `/api/recommendations?limit=2` returned `mode: ai` and two items. This proves that path worked
+  at probe time, not that every AI request is reliable.
+- All 19 distinct Unsplash image URLs used by the 30-cover catalogue returned HTTP 200
+  in a lightweight retrieval check (11 November); providers may change them later.
 - Versioned additive migrations: 002_review_quality.sql, 003_review_media.sql.
 - The initial migration request was denied and was not bypassed. After explicit user approval,
   migrations 002 and 003 were applied atomically to dev-review-2026-10-27 (br-little-meadow-b9qiabdc).
   Independent reads confirmed 30 sourced covers, 282 captured booking prices and 9 daily schedules;
   event/booking/interaction counts remained 30 / 282 / 7,792.
-- Production was checked read-only: only 001_init.sql is recorded and none of the three review columns exist.
+- Production was checked read-only on 11 November: only `001_init.sql` is recorded;
+  the database still has 30 events, of which 8 have image URLs.
   No production migration, service configuration change, restart, redeploy or merge has been performed.
 - See review-validation-2026-10-27.md for the database verification and Render observations.
 
 ## Remaining / not represented as completed
 
-- Device-file uploads: requires provisioned object storage and its configured credentials; the form currently supports URLs, preview and focal position.
-- Static social-card prerendering for GitHub Pages.
+- Live device-file uploads require private object-store configuration and end-to-end verification;
+  the implemented upload API and UI are intentionally disabled without these credentials.
+- Social platforms still need a real crawl test of `/api/share/:slug` after deployment.
 - Final visual review with loaded photos on mobile/desktop; the local image-host downloads timed out.
 - Stronger human-judged Arabic relevance/typo/negation evaluation and recommender-vs-popularity/diversity evaluation.
-- Hosted AI root cause and recovery remain unresolved. The user confirmed My Workspace and logs/events/metrics
-  were inspected. API logs contain AI HTTP 502 failures. No explicit crash/OOM event was returned.
-  Current HTTP availability could not be established from the inspection environment.
-  Live services have empty HTTP health-check paths, unlike render.yaml. Production recovery requires approval.
-- Release after final visual/preview verification and an explicit production deployment decision; CI and review-branch migrations have passed.
+- Earlier API logs contained AI HTTP 502 failures. The latest read-only health and recommendation
+  probes succeeded, but the intermittent cause remains unconfirmed. Both services still have empty
+  HTTP health-check paths, unlike `render.yaml`, and automatic deployment is disabled.
+- Render API/AI services track `release/eventboard-v2-pages`, which has diverged from this PR branch.
+  A reviewed release-branch merge and a manual deploy are needed; merging PR #3 to `main` alone
+  cannot update these services. Do not merge to `main` before the backend/database rollout.
+- Production release requires an explicit deployment decision and safe ordering: review production
+  backup/rollback options, apply additive migrations 002/003, deploy the compatible API and AI,
+  verify real journeys, then merge PR #3 and verify GitHub Pages. CI success alone is not deployment.
